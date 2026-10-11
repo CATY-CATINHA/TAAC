@@ -123,6 +123,28 @@ def create_all_figures(
     dimensions = summary["dimensionality"].astype(int).tolist()
     fig, ax = plt.subplots(figsize=(6.4, 4.2))
     for metric, label, color in (
+        ("test_uncovered_fraction", "All test observations", "#4b5563"),
+        ("normal_uncovered_fraction", "Normal", "#1f5a94"),
+        ("anomaly_uncovered_fraction", "Anomaly", "#d97706"),
+    ):
+        ax.errorbar(
+            dimensions,
+            summary[f"{metric}_mean"],
+            yerr=summary[f"{metric}_std"],
+            marker="o",
+            markersize=4.5,
+            linewidth=1.6,
+            capsize=3,
+            label=label,
+            color=color,
+        )
+    _finish_axis(ax, dimensions, "Fraction with score = 1 (uncovered)")
+    ax.set_ylim(-0.03, 1.03)
+    ax.legend(frameon=False)
+    paths.extend(_save(fig, output_dir / f"{prefix}_uncovered_fraction"))
+
+    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    for metric, label, color in (
         ("fit_time_seconds", "Fit", "#1f5a94"),
         ("scoring_time_seconds", "Score", "#d97706"),
     ):

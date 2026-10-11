@@ -5,6 +5,9 @@ irrelevant dimensions affects the **original** ADERH detector. It uses the
 official `aderh==1.0.0` package unchanged. The experiment measures outcomes; it
 does not assume that predictive performance must degrade with dimensionality.
 
+The completed 80-configuration baseline and its interpretation are documented
+in [`docs/full_experiment_report.md`](docs/full_experiment_report.md).
+
 Primary sources:
 
 - [Official ADERH repository](https://github.com/Walid10010/ADERH)
@@ -86,25 +89,39 @@ Fit timing covers the official `fit` call (including ADERH's training-score
 calculation). Scoring timing covers only `decision_function` on the test split;
 data generation, scaling, and metrics are excluded.
 
+The raw results also record score diversity and coverage saturation. Under the
+official 1.0.0 scorer, each estimator contribution starts at one and becomes
+strictly smaller only if at least one hypersphere covers the observation.
+Consequently, a final score exactly equal to one means that the observation was
+uncovered by every hypersphere in every ensemble member. Overall, normal-class,
+and anomaly-class uncovered fractions are reported separately.
+
 ## Run
 
 Validate the inexpensive path first:
 
 ```powershell
-aderh-experiment smoke
-# equivalent:
-python -m aderh_distance.experiments smoke
+.venv\Scripts\python -m aderh_distance.experiments smoke
 ```
+
+After activating the virtual environment, the shorter equivalent is
+`aderh-experiment smoke`.
 
 Smoke mode runs dimensions `[2, 50]` for seed `0`. Only after it succeeds, run
 the complete 80-configuration experiment (8 dimensions × 10 seeds):
 
 ```powershell
-aderh-experiment full
+.venv\Scripts\python -m aderh_distance.experiments full
 ```
 
 The full dimensions are `[2, 5, 10, 20, 50, 100, 200, 500]`; seeds are
 `0` through `9`. Use `--help` for output-directory and RC sampling options.
+
+After a full run, reproduce the trend and score-collapse checks with:
+
+```powershell
+.venv\Scripts\python -m aderh_distance.analysis
+```
 
 ## Artifacts
 
@@ -116,12 +133,17 @@ Each mode writes:
 - `results/<mode>_summary.csv`: means and population standard deviations by
   dimensionality;
 - `results/<mode>_metadata.json`: exact environment and protocol metadata;
+- `results/full_analysis.json` and `results/full_seed_trends.csv`: endpoint,
+  monotonicity, rank-correlation, random-baseline, and score-collapse checks;
 - `figures/<mode>_*.png` and `.pdf`: Relative Contrast, ROC-AUC, Average
-  Precision, and runtime plots with variability across seeds.
+  Precision, uncovered fraction, and runtime plots with variability across
+  seeds.
 
-Generated results and figures are git-ignored so that outputs cannot be
-mistaken for committed evidence. Do not report a trend until the corresponding
-raw CSV has actually been produced and checked.
+Generated results and figures are git-ignored by default so that arbitrary
+local runs cannot be mistaken for validated evidence. The tracked `full_*`
+artifacts are an intentional frozen snapshot of the completed baseline reported
+in `docs/full_experiment_report.md`. Do not report a new trend until its raw CSV
+has actually been produced and checked.
 
 ## ADERH internals
 

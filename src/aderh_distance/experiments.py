@@ -28,6 +28,11 @@ SUMMARY_METRICS = (
     "roc_auc",
     "average_precision",
     "relative_contrast",
+    "test_score_std",
+    "test_unique_score_count",
+    "test_uncovered_fraction",
+    "normal_uncovered_fraction",
+    "anomaly_uncovered_fraction",
     "fit_time_seconds",
     "scoring_time_seconds",
 )
@@ -51,6 +56,42 @@ def scale_train_test(
 
     scaler = MinMaxScaler()
     return scaler.fit_transform(X_train), scaler.transform(X_test), scaler
+
+
+def score_diagnostics(scores: np.ndarray, y_true: np.ndarray) -> dict[str, float | int]:
+    """Summarize score separation and exact ADERH coverage saturation.
+
+    The official scorer initializes every estimator contribution to 1 and
+    replaces it with a value strictly below 1 only when a sphere covers the
+    observation. Therefore a final score exactly equal to 1 identifies a test
+    observation uncovered by every hypersphere in every ensemble member.
+    """
+
+    scores = np.asarray(scores, dtype=float)
+    y_true = np.asarray(y_true)
+    if scores.ndim != 1 or y_true.ndim != 1 or scores.shape != y_true.shape:
+        raise ValueError("scores and y_true must be one-dimensional and aligned")
+    if not np.isin(y_true, (0, 1)).all() or np.unique(y_true).size != 2:
+        raise ValueError("y_true must contain both binary classes 0 and 1")
+
+    normal_scores = scores[y_true == 0]
+    anomaly_scores = scores[y_true == 1]
+    uncovered = scores == 1.0
+    return {
+        "test_score_mean": float(scores.mean()),
+        "test_score_std": float(scores.std(ddof=0)),
+        "test_score_min": float(scores.min()),
+        "test_score_max": float(scores.max()),
+        "test_unique_score_count": int(np.unique(scores).size),
+        "test_uncovered_fraction": float(uncovered.mean()),
+        "normal_score_mean": float(normal_scores.mean()),
+        "anomaly_score_mean": float(anomaly_scores.mean()),
+        "anomaly_normal_score_gap": float(
+            anomaly_scores.mean() - normal_scores.mean()
+        ),
+        "normal_uncovered_fraction": float(uncovered[y_true == 0].mean()),
+        "anomaly_uncovered_fraction": float(uncovered[y_true == 1].mean()),
+    }
 
 
 def _split_indices(y: np.ndarray, *, random_state: int) -> tuple[np.ndarray, np.ndarray]:
@@ -154,6 +195,7 @@ def run_experiment(
             scores = model.decision_function(X_test_scaled)
             scoring_time = perf_counter() - scoring_started
             params = model.get_params(deep=False)
+            diagnostics = score_diagnostics(scores, y_test)
 
             rows.append(
                 {
@@ -183,6 +225,7 @@ def run_experiment(
                     "model_hyperparameters": json.dumps(params, sort_keys=True),
                     "preprocessing": "MinMaxScaler fit on training split only",
                     "score_direction": "higher_is_more_anomalous",
+                    **diagnostics,
                 }
             )
             # Preserve completed configurations if a later one is interrupted.
@@ -240,6 +283,10 @@ def run_experiment(
             "implementation": "official PyPI package",
             "score_direction": "higher decision_function values are more anomalous",
             "hyperparameters": json.loads(rows[0]["model_hyperparameters"]),
+            "uncovered_score_semantics": (
+                "score == 1.0 means uncovered by every hypersphere in every "
+                "ensemble member under ADERH 1.0.0 scoring semantics"
+            ),
         },
         "artifacts": {
             "raw_results": str(raw_path),

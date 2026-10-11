@@ -1,0 +1,11 @@
+seed,relative_contrast_strictly_decreasing,roc_auc_non_increasing,average_precision_non_increasing,dimension_vs_relative_contrast_spearman,dimension_vs_roc_auc_spearman,dimension_vs_average_precision_spearman,relative_contrast_vs_roc_auc_spearman,relative_contrast_vs_average_precision_spearman
+0,True,True,True,-1.0,-0.9940297973880049,-0.9940297973880049,0.9940297973880049,0.9940297973880049
+1,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+2,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+3,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+4,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+5,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+6,True,True,True,-1.0,-0.9940297973880049,-0.9940297973880049,0.9940297973880049,0.9940297973880049
+7,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+8,True,True,True,-1.0,-1.0,-1.0,1.0,1.0
+9,True,True,True,-1.0,-1.0,-1.0,1.0,1.0

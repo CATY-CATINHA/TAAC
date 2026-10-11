@@ -21,6 +21,7 @@ dev = ["pytest>=8,<10"]
 
 [project.scripts]
 aderh-experiment = "aderh_distance.experiments:main"
+aderh-analyze = "aderh_distance.analysis:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -28,4 +29,3 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]
-

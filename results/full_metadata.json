@@ -1,0 +1,83 @@
+{
+  "aderh": {
+    "hyperparameters": {
+      "contamination": 0.1,
+      "n": 18,
+      "n_estimators": 256,
+      "random_state": 0
+    },
+    "implementation": "official PyPI package",
+    "score_direction": "higher decision_function values are more anomalous",
+    "uncovered_score_semantics": "score == 1.0 means uncovered by every hypersphere in every ensemble member under ADERH 1.0.0 scoring semantics"
+  },
+  "artifacts": {
+    "figures": [
+      "figures\\full_relative_contrast.png",
+      "figures\\full_relative_contrast.pdf",
+      "figures\\full_roc_auc.png",
+      "figures\\full_roc_auc.pdf",
+      "figures\\full_average_precision.png",
+      "figures\\full_average_precision.pdf",
+      "figures\\full_uncovered_fraction.png",
+      "figures\\full_uncovered_fraction.pdf",
+      "figures\\full_runtime.png",
+      "figures\\full_runtime.pdf"
+    ],
+    "raw_results": "results\\full_raw_results.csv",
+    "summary": "results\\full_summary.csv"
+  },
+  "created_utc": "2026-10-11T21:28:10.028526+00:00",
+  "dataset": {
+    "anomaly_distribution": "N([4, 4], I)",
+    "contamination": 0.05,
+    "informative_dimensions": 2,
+    "irrelevant_distribution": "independent N(0, 1) for both classes",
+    "n_samples": 2000,
+    "normal_distribution": "N([0, 0], I)"
+  },
+  "dimensions": [
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500
+  ],
+  "mode": "full",
+  "packages": {
+    "aderh": "1.0.0",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.3",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "preprocessing": "MinMaxScaler fitted on training data only",
+  "python": "3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]",
+  "relative_contrast": {
+    "population": "normal training observations after scaling",
+    "random_pair_count": 4096,
+    "reference_sample_size_max": 512,
+    "self_distances_excluded": true
+  },
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "split": {
+    "method": "StratifiedShuffleSplit",
+    "same_indices_across_dimensions_within_seed": true,
+    "test_fraction": 0.3,
+    "train_fraction": 0.7
+  }
+}

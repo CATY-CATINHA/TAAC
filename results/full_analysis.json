@@ -1,0 +1,88 @@
+{
+  "baseline_configuration_counts": {
+    "10": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "100": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "2": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "20": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "200": {
+      "average_precision_equals_prevalence": 2,
+      "roc_auc_equals_0_5": 2
+    },
+    "5": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "50": {
+      "average_precision_equals_prevalence": 0,
+      "roc_auc_equals_0_5": 0
+    },
+    "500": {
+      "average_precision_equals_prevalence": 10,
+      "roc_auc_equals_0_5": 10
+    }
+  },
+  "dimension_mean_spearman": {
+    "relative_contrast_vs_average_precision": 1.0,
+    "relative_contrast_vs_roc_auc": 1.0,
+    "relative_contrast_vs_uncovered_fraction": -0.9759000729485332
+  },
+  "endpoint_means": {
+    "anomaly_normal_score_gap_end": 0.0,
+    "anomaly_normal_score_gap_start": 0.560730329810812,
+    "average_precision_end": 0.05,
+    "average_precision_start": 0.98332637266642,
+    "maximum_dimension": 500,
+    "minimum_dimension": 2,
+    "relative_contrast_end": 1.0900796622402107,
+    "relative_contrast_fractional_decrease": 0.9361351075088578,
+    "relative_contrast_start": 17.068527319472103,
+    "roc_auc_end": 0.5,
+    "roc_auc_start": 0.9992690058479532,
+    "score_std_end": 0.0,
+    "score_std_start": 0.15873931886580456,
+    "uncovered_fraction_end": 1.0,
+    "uncovered_fraction_start": 0.0,
+    "unique_scores_end": 1.0,
+    "unique_scores_start": 600.0
+  },
+  "interpretation_guardrail": "These results establish the failure mode for this controlled synthetic protocol and ADERH 1.0.0 defaults; they do not prove a universal failure for every dataset or hyperparameter setting.",
+  "monotonicity_across_seeds": {
+    "average_precision_non_increasing_count": 10,
+    "denominator": 10,
+    "relative_contrast_strictly_decreasing_count": 10,
+    "roc_auc_non_increasing_count": 10
+  },
+  "scope": {
+    "dimensions": [
+      2,
+      5,
+      10,
+      20,
+      50,
+      100,
+      200,
+      500
+    ],
+    "n_configurations": 80,
+    "n_seeds": 10,
+    "total_test_scores_at_max_dimension": 6000
+  },
+  "score_collapse": {
+    "all_max_dimension_scores_equal_one": true,
+    "first_dimension_with_mean_uncovered_fraction_at_least_0_95": 200,
+    "max_dimension_anomaly_uncovered_fraction_mean": 1.0,
+    "max_dimension_normal_uncovered_fraction_mean": 1.0
+  }
+}

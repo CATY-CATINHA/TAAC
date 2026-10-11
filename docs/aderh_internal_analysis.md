@@ -18,6 +18,12 @@ ensemble contributions are local variables inside `_raw_scores`. They are not
 stored on the fitted object or returned by `decision_function`. Therefore this
 baseline records none of them.
 
+NDensity is recomputed from the complete matrix passed to each scoring call:
+it counts how many currently scored rows select each sphere. Consequently,
+`decision_function` is batch-composition dependent. The experiment controls
+this behavior by always scoring the complete, fixed 600-row test split once per
+configuration; it does not compare scores obtained from different batching.
+
 ## Verified distance conventions
 
 ADERH works in **squared Euclidean distance** space. For an anchor/partner pair
@@ -51,4 +57,3 @@ as an independent analysis implementation, include score-equivalence tests
 against `decision_function` at tight numerical tolerance, and fail fast if the
 ADERH version or private state shape changes. That work is deliberately deferred
 until after the uninstrumented baseline is validated.
-
