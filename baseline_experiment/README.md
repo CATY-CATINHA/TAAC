@@ -21,7 +21,7 @@ Python 3.10 or newer is required. From a PowerShell prompt:
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install --upgrade pip
-.venv\Scripts\python -m pip install -e ".[dev]"
+.venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pytest
 ```
 
@@ -29,6 +29,9 @@ python -m venv .venv
 numerical/plotting dependencies to compatible major releases. Every run also
 writes exact package versions, Python version, platform, configuration, and
 sampling details to `results/<mode>_metadata.json`.
+`requirements.txt` installs this project and its development dependencies from
+that metadata, keeping `pyproject.toml` as the single source of dependency
+versions.
 
 ## Protocol
 
