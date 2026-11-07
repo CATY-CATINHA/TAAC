@@ -2,7 +2,7 @@
 
 This directory contains the **Local Intrinsic Dimensionality (LID)** component of the project.
 
-The objective is to estimate the local dimensional complexity of each observation and investigate whether LID can later guide the pair-selection mechanism of ADERH.
+The objective is to estimate the local dimensional complexity of each observation and investigate whether LID can guide the pair-selection mechanism of ADERH.
 
 The future adaptive mechanism is conceptually based on:
 
@@ -15,7 +15,7 @@ where:
 - higher `α(x)` will correspond to more Local Pairing;
 - lower `α(x)` will correspond to more Random Pairing.
 
-At this stage, the focus is on implementing, validating, and analysing LID before integrating it into the pairing mechanism.
+The work in this module establishes whether LID provides a meaningful and robust geometric signal before it is integrated into the adaptive pairing mechanism.
 
 ---
 
@@ -23,21 +23,21 @@ At this stage, the focus is on implementing, validating, and analysing LID befor
 
 The selected estimator is the **Maximum Likelihood Estimator of Local Intrinsic Dimensionality (MLE-LID)**.
 
-Current configuration:
+Reference configuration:
 
 - **Estimator:** MLE-LID
 - **Distance metric:** Euclidean
-- **Initial neighbourhood size:** `k = 20`
+- **Reference neighbourhood size:** `k = 20`
 - **Self-neighbour:** excluded
 - **Labels used for LID estimation:** no
 - **Preprocessing:** MinMaxScaler fitted on training data only
 
-The value `k = 20` is used as the initial reference configuration and is not assumed to be universally optimal.
+The value `k = 20` is used as a reference configuration rather than as an assumed optimal value.
 
-A later sensitivity analysis will evaluate:
+A sensitivity analysis was also performed with:
 
 ```text
-k ∈ {10, 20, 30, 50}
+k ∈ {5, 10, 20, 30}
 ```
 
 ---
@@ -50,6 +50,8 @@ lid_analysis/
 ├── __init__.py
 ├── lid.py
 ├── analyze_lid_baseline.py
+├── analyze_lid_aderh_relationship.py
+├── analyze_k_sensitivity.py
 ├── README.md
 │
 ├── tests/
@@ -60,12 +62,40 @@ lid_analysis/
 │   ├── full_lid_points.csv
 │   ├── full_lid_by_seed.csv
 │   ├── full_lid_summary.csv
-│   └── full_lid_metadata.json
+│   ├── full_lid_metadata.json
+│   │
+│   ├── relationships/
+│   │   ├── lid_aderh_merged.csv
+│   │   ├── relationship_by_dimension.csv
+│   │   ├── correlations_by_seed.csv
+│   │   ├── correlations_by_dimension.csv
+│   │   └── relationship_summary.json
+│   │
+│   └── k_sensitivity/
+│       ├── full_k5_*
+│       ├── full_k10_*
+│       ├── full_k30_*
+│       ├── k_sensitivity_by_dimension.csv
+│       ├── k_sensitivity_correlations.csv
+│       ├── k_sensitivity_correlations_by_seed.csv
+│       ├── k_direction_consistency.csv
+│       ├── k_robustness_summary.csv
+│       └── k_sensitivity_summary.json
 │
 ├── figures/
 │   ├── lid_evolucao_dimensionalidade.png
 │   ├── lid_quartis_dimensionalidade.png
-│   └── lid_estabilidade_seeds.png
+│   ├── lid_estabilidade_seeds.png
+│   │
+│   ├── relationships/
+│   │   ├── lid_vs_relative_contrast.png
+│   │   ├── lid_vs_uncovered_fraction.png
+│   │   ├── lid_vs_roc_auc.png
+│   │   └── lid_vs_average_precision.png
+│   │
+│   └── k_sensitivity/
+│       ├── lid_by_k_vs_dimensionality.png
+│       └── correlations_by_k.png
 │
 └── docs/
     └── lid_experiment_report.md
@@ -105,15 +135,15 @@ The implementation includes input validation, self-neighbour exclusion, numerica
 
 ## Validation
 
-Two complementary validation files are provided.
+Two complementary validation stages are provided.
 
-### Unit tests
+### Unit Tests
 
 ```text
 tests/test_lid_unit.py
 ```
 
-These verify the technical correctness of the implementation:
+They verify:
 
 - one LID value per observation;
 - positive and finite estimates;
@@ -132,18 +162,18 @@ Current result:
 4 passed
 ```
 
-### Synthetic validation
+### Synthetic Validation
 
 ```text
 tests/test_lid_synthetic.py
 ```
 
-Synthetic Gaussian datasets are used to verify that estimated LID increases when known dimensionality increases.
+Synthetic Gaussian datasets are used to verify that estimated LID behaves consistently as dimensionality increases.
 
-Current tested dimensions:
+Current result:
 
 ```text
-2D, 5D, 10D, 20D
+3 passed
 ```
 
 Run with:
@@ -152,53 +182,43 @@ Run with:
 python -m pytest lid_analysis/tests/test_lid_synthetic.py -v
 ```
 
-Current result:
-
-```text
-3 passed
-```
-
 ---
 
 ## ADERH Baseline Integration
 
-The main experiment is implemented in:
+LID is evaluated on the **same controlled datasets used in the ADERH dimensionality baseline**.
+
+The experiment reuses:
+
+- the same synthetic generator;
+- the same dimensionalities;
+- the same random seeds;
+- the same train/test splits;
+- the same MinMax preprocessing.
+
+The analysed dimensionalities are:
 
 ```text
-analyze_lid_baseline.py
+2, 5, 10, 20, 50, 100, 200, 500
 ```
 
-It reuses the experimental protocol from:
+with:
 
 ```text
-baseline_experiment/
+10 random seeds
 ```
 
-including:
-
-- `make_nested_datasets()`;
-- `DEFAULT_DIMENSIONS`;
-- `FULL_SEEDS`;
-- `SMOKE_DIMENSIONS`;
-- `_split_indices()`;
-- `scale_train_test()`.
-
-This ensures that LID is analysed on the same datasets, splits, seeds, and preprocessing used by the original ADERH baseline.
-
-The complete experiment evaluates:
+giving:
 
 ```text
-Dimensions: 2, 5, 10, 20, 50, 100, 200, 500
-Seeds:      0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-
-Total: 8 × 10 = 80 configurations
+8 dimensions × 10 seeds = 80 configurations
 ```
 
-LID is estimated using **all training observations** and does not use anomaly labels.
+LID is estimated on all training observations without using anomaly labels.
 
 ---
 
-## Running the Analysis
+## Running the LID Analysis
 
 Install the baseline package from the project root:
 
@@ -206,13 +226,7 @@ Install the baseline package from the project root:
 python -m pip install -e baseline_experiment
 ```
 
-Run the smoke experiment first:
-
-```bash
-python -m lid_analysis.analyze_lid_baseline smoke
-```
-
-Then run the complete experiment:
+Run the main `k = 20` experiment:
 
 ```bash
 python -m lid_analysis.analyze_lid_baseline full
@@ -220,48 +234,9 @@ python -m lid_analysis.analyze_lid_baseline full
 
 ---
 
-## Generated Outputs
+## Main LID Results
 
-### `full_lid_points.csv`
-
-Contains the complete point-level LID distribution.
-
-Used for:
-
-- distribution analysis;
-- histograms and boxplots;
-- point-level diagnostics;
-- future adaptive pairing.
-
-### `full_lid_by_seed.csv`
-
-Contains one row for each dimensionality/seed configuration, including:
-
-- mean;
-- median;
-- standard deviation;
-- minimum;
-- Q25;
-- Q75;
-- maximum.
-
-Used mainly to analyse stability across seeds.
-
-### `full_lid_summary.csv`
-
-Aggregates the ten seeds for each dimensionality.
-
-Used to analyse the overall relationship between dimensionality and estimated LID.
-
-### `full_lid_metadata.json`
-
-Stores the experiment configuration and environment information required for reproducibility.
-
----
-
-## Main Results
-
-Aggregated results for `k = 20`:
+Aggregated results for the reference configuration `k = 20`:
 
 | Dimensionality | Mean LID | Median LID |
 |---:|---:|---:|
@@ -274,7 +249,7 @@ Aggregated results for `k = 20`:
 | 200 | 65.029 | 62.928 |
 | 500 | 107.492 | 104.007 |
 
-Main observation:
+The main trend is:
 
 ```text
 Increasing dimensional complexity
@@ -284,23 +259,130 @@ Increasing estimated LID
 
 The trend is monotonic across all ten random seeds.
 
+MLE-LID is therefore treated in this project as a:
+
+> **relative indicator of local dimensional complexity**
+
+rather than an exact estimator of total dimensionality.
+
+---
+
+## LID ↔ ADERH Relationship
+
+The relationship analysis is implemented in:
+
+```text
+analyze_lid_aderh_relationship.py
+```
+
+Run with:
+
+```bash
+python -m lid_analysis.analyze_lid_aderh_relationship
+```
+
+The analysis investigates:
+
+```text
+LID ↔ Relative Contrast
+LID ↔ Uncovered Fraction
+LID ↔ ROC-AUC
+LID ↔ Average Precision
+```
+
+Results using dimensionality-level means:
+
+| Relationship | Spearman ρ |
+|---|---:|
+| Mean LID ↔ Relative Contrast | -1.000 |
+| Mean LID ↔ Uncovered Fraction | +0.976 |
+| Mean LID ↔ ROC-AUC | -1.000 |
+| Mean LID ↔ Average Precision | -1.000 |
+
+The expected direction is also reproduced across all ten random seeds.
+
+Overall:
+
+```text
+LID ↑
+ │
+ ├── Relative Contrast ↓
+ ├── Uncovered Fraction ↑
+ ├── ROC-AUC ↓
+ └── Average Precision ↓
+```
+
+This shows that increasing LID is consistently associated with the dimensional regime in which ADERH's geometry becomes less informative and detection performance deteriorates.
+
+These relationships are associations and should not be interpreted as evidence that LID itself causes ADERH degradation.
+
+---
+
+## Sensitivity to k
+
+Because MLE-LID depends on the number of nearest neighbours used, a sensitivity analysis was performed with:
+
+```text
+k = 5, 10, 20, 30
+```
+
+The experiment is implemented in:
+
+```text
+analyze_k_sensitivity.py
+```
+
+Run with:
+
+```bash
+python -m lid_analysis.analyze_k_sensitivity
+```
+
+The analysis shows that changing `k` affects the **absolute magnitude of LID estimates**, but does not change the main scientific conclusions.
+
+Across all tested values of `k`:
+
+```text
+LID ↔ Relative Contrast     negative
+LID ↔ Uncovered Fraction    positive
+LID ↔ ROC-AUC               negative
+LID ↔ Average Precision     negative
+```
+
+The direction of all four relationships remains stable across all tested neighbourhood sizes and random seeds.
+
+Therefore:
+
+> **The observed relationship between LID and ADERH degradation is robust to the tested choice of neighbourhood size.**
+
+The sensitivity analysis is used as a robustness/ablation analysis and not to select `k` according to the strongest correlation.
+
 ---
 
 ## Key Findings
 
-- estimated LID increases strongly with dimensionality;
-- the trend is consistent across all ten seeds;
-- variability between seeds remains low;
-- point-level LID values show local variation;
-- MLE-LID increasingly underestimates absolute dimensionality at very high dimensions.
+The LID analysis currently establishes that:
 
-Therefore, in this project LID is currently interpreted as a:
+- MLE-LID can be estimated reliably at observation level;
+- estimated LID increases consistently with dimensional complexity;
+- this trend is stable across random seeds;
+- point-level LID contains local variation;
+- increasing LID is associated with decreasing distance contrast;
+- increasing LID is associated with increasing hypersphere non-coverage;
+- increasing LID is associated with decreasing ROC-AUC and Average Precision;
+- these conclusions remain stable for `k = 5, 10, 20, 30`.
 
-> **relative indicator of local dimensional complexity**
+Conceptually:
 
-rather than an exact estimator of the total dimensionality.
-
----
+```text
+Higher dimensional complexity
+        ↓
+Higher estimated LID
+        ↓
+Less informative distance geometry
+        ↓
+ADERH degradation
+```
 
 ## References
 

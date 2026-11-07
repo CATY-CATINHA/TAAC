@@ -2,9 +2,9 @@
 
 ## 1. Objective
 
-This document describes the implementation, validation, and experimental analysis of the **Local Intrinsic Dimensionality (LID)** component.
+This document describes the implementation, validation, experimental analysis, and sensitivity study of the **Local Intrinsic Dimensionality (LID)** component.
 
-The purpose of this stage is to determine whether LID can provide a stable point-level measure of local dimensional complexity that may later be used to adapt ADERH's pair-selection strategy.
+The purpose of this stage is to determine whether LID provides a meaningful point-level measure of local dimensional complexity that can later be used to adapt ADERH's pair-selection strategy.
 
 The future adaptive mechanism is conceptually based on:
 
@@ -14,11 +14,55 @@ The future adaptive mechanism is conceptually based on:
 
 where `α(x)` will determine the balance between Local Pairing and Random Pairing.
 
-At this stage, the function `f` is not defined. The goal is first to establish that the selected LID estimator behaves reliably and captures meaningful local variation.
+The LID stage therefore has three main objectives:
+
+1. implement and validate an established LID estimator;
+2. determine whether LID is associated with the dimensional failure mode observed in ADERH;
+3. verify that the conclusions are robust to the neighbourhood size `k`.
 
 ---
 
-## 2. Estimator Selection
+## 2. Why LID Is Relevant to the Project
+
+The controlled ADERH baseline previously established that increasing dimensionality is associated with:
+
+- decreasing distance contrast;
+- increasing hypersphere non-coverage;
+- deteriorating ROC-AUC;
+- deteriorating Average Precision;
+- eventual collapse of anomaly-score discrimination.
+
+However, total dimensionality is a **global property of the dataset**.
+
+The proposed adaptive ADERH method requires a signal that can be calculated at the level of individual observations.
+
+LID provides such a signal:
+
+```text
+Global dimensionality experiment
+        ↓
+ADERH degradation observed
+        ↓
+Need a local geometric indicator
+        ↓
+LID(x)
+```
+
+Each observation receives its own estimate of local dimensional complexity.
+
+This creates the possibility of later defining:
+
+```text
+LID(x)
+   ↓
+α(x)
+   ↓
+Adaptive Pair Selection
+```
+
+---
+
+## 3. Estimator Selection
 
 The selected estimator is the **Maximum Likelihood Estimator of Local Intrinsic Dimensionality (MLE-LID)**.
 
@@ -28,9 +72,9 @@ For an observation `x`, the estimator considers the distances to its `k` nearest
 r1 ≤ r2 ≤ ... ≤ rk
 ```
 
-and estimates the local dimensionality from the growth pattern of these distances.
+and estimates dimensionality from the local growth pattern of these distances.
 
-The selected initial configuration is:
+The reference configuration is:
 
 ```text
 Estimator:       MLE-LID
@@ -43,17 +87,11 @@ Preprocessing:   MinMaxScaler fitted on training data only
 
 The value `k = 20` is used as a reference configuration rather than as an assumed optimal value.
 
-A later sensitivity analysis will evaluate:
-
-```text
-k ∈ {10, 20, 30, 50}
-```
-
-to determine how strongly the conclusions depend on neighbourhood size.
+The estimator choice allows the project to focus its contribution on the **adaptive ADERH pairing mechanism**, rather than introducing a new intrinsic-dimensionality estimator.
 
 ---
 
-## 3. MLE-LID Implementation
+## 4. MLE-LID Implementation
 
 The estimator is implemented in:
 
@@ -75,34 +113,32 @@ For a dataset containing `n` observations, the function returns:
 
 so that each observation receives its own local dimensionality estimate.
 
-The implementation performs several validation steps:
+The implementation:
 
-- verifies that input data are two-dimensional;
+- validates input dimensionality;
 - rejects NaN and infinite values;
 - checks whether `k` is valid;
 - excludes the observation itself from its neighbourhood;
-- applies numerical safeguards;
+- applies numerical stability safeguards;
 - detects degenerate neighbourhoods.
 
-The `reference` parameter also allows future estimation of the LID of new observations relative to a training reference set.
+The `reference` parameter also allows LID to be estimated for observations relative to a separate reference dataset.
 
 ---
 
-## 4. Unit Testing
+## 5. Unit Testing
 
-Technical validation was implemented in:
+Technical validation is implemented in:
 
 ```text
 lid_analysis/tests/test_lid_unit.py
 ```
 
-These tests use small synthetic datasets generated directly in memory.
-
-They are intended to answer:
+The tests answer:
 
 > Does the implementation behave technically as expected?
 
-The tests verify:
+They verify:
 
 1. exactly one LID estimate is returned per observation;
 2. all estimates are finite;
@@ -122,31 +158,29 @@ Result:
 4 passed
 ```
 
-This confirms the technical correctness of the basic implementation.
+This confirms the technical correctness of the implementation.
 
 ---
 
-## 5. Synthetic Validation
+## 6. Synthetic Validation
 
-A second validation stage was implemented in:
+A second validation stage is implemented in:
 
 ```text
 lid_analysis/tests/test_lid_synthetic.py
 ```
 
-Unlike the unit tests, this stage evaluates the behaviour of the estimator.
-
-Synthetic Gaussian datasets with known dimensionalities were generated:
+Synthetic Gaussian datasets with known dimensionalities are generated:
 
 ```text
 2D, 5D, 10D, 20D
 ```
 
-The objective was to verify that:
+The objective is to verify that:
 
-- estimated LID increases when dimensionality increases;
-- the estimates remain positive and finite;
-- estimates in low-dimensional settings remain reasonably close to the known dimensionality.
+- estimated LID increases as dimensionality increases;
+- estimates remain positive and finite;
+- low-dimensional estimates remain reasonably close to the known dimensionality.
 
 Execution:
 
@@ -160,29 +194,25 @@ Result:
 3 passed
 ```
 
-The synthetic validation therefore confirmed that MLE-LID responds in the expected direction before being applied to the ADERH experimental setting.
+The synthetic validation therefore confirms that MLE-LID responds in the expected direction before being applied to the ADERH experimental setting.
 
 ---
 
-## 6. Integration with the ADERH Baseline
+## 7. Integration with the ADERH Baseline
 
-The main experimental analysis is implemented in:
+The main LID experiment is implemented in:
 
 ```text
 lid_analysis/analyze_lid_baseline.py
 ```
 
-A central methodological decision was to avoid creating a separate synthetic scenario.
-
-Instead, the LID analysis deliberately reuses the existing:
+Rather than creating a new dimensionality experiment, the analysis deliberately reuses:
 
 ```text
 baseline_experiment/
 ```
 
-protocol.
-
-The following baseline components are reused directly:
+including:
 
 - `make_nested_datasets()`;
 - `DEFAULT_DIMENSIONS`;
@@ -191,11 +221,11 @@ The following baseline components are reused directly:
 - `_split_indices()`;
 - `scale_train_test()`.
 
-This ensures direct comparability between the LID results and the previously obtained ADERH results.
+This guarantees direct comparability between LID and the previously obtained ADERH baseline results.
 
 ---
 
-## 7. Experimental Protocol
+## 8. Experimental Protocol
 
 The controlled baseline contains:
 
@@ -206,13 +236,13 @@ The controlled baseline contains:
 additional independent Gaussian noise dimensions
 ```
 
-The dimensionalities analysed are:
+The analysed dimensionalities are:
 
 ```text
 2, 5, 10, 20, 50, 100, 200, 500
 ```
 
-The complete analysis uses:
+with:
 
 ```text
 seeds 0–9
@@ -226,8 +256,8 @@ giving:
 
 For each seed:
 
-1. the nested synthetic datasets are regenerated;
-2. the same stratified 70/30 train/test split is reproduced;
+1. the same nested synthetic datasets are regenerated;
+2. the same stratified 70/30 split is reproduced;
 3. the same indices are reused across dimensionalities;
 4. MinMaxScaler is fitted only on the training split;
 5. LID is calculated for all scaled training observations.
@@ -240,7 +270,7 @@ The training set contains:
 
 per configuration.
 
-Therefore, the full experiment produces:
+Therefore, the reference `k = 20` experiment produces:
 
 ```text
 80 × 1400 = 112,000 point-level LID estimates
@@ -248,11 +278,11 @@ Therefore, the full experiment produces:
 
 ---
 
-## 8. Use of Ground-Truth Labels
+## 9. Use of Ground-Truth Labels
 
-Ground-truth labels are used only to reproduce the stratified train/test split of the original baseline.
+Ground-truth labels are used only to reproduce the same stratified train/test split as the ADERH baseline.
 
-They are **not** supplied to the LID estimator.
+They are not supplied to the LID estimator.
 
 Conceptually:
 
@@ -272,152 +302,9 @@ This preserves the unsupervised nature required for future integration with ADER
 
 ---
 
-## 9. Smoke Experiment
+## 10. Main LID Results
 
-Before running the complete experiment, a smoke configuration was executed using:
-
-```text
-seed = 0
-dimensions = 2, 50
-```
-
-Results:
-
-```text
-2D
-Median LID = 2.156
-Mean LID   = 2.252
-
-50D
-Median LID = 28.168
-Mean LID   = 29.183
-```
-
-This confirmed that:
-
-- the baseline imports worked correctly;
-- the data-generation pipeline was reproduced;
-- preprocessing was working;
-- MLE-LID could be calculated successfully;
-- estimated LID increased substantially from 2D to 50D.
-
-The corresponding smoke values were later confirmed to match exactly the same configurations in the full experiment.
-
----
-
-## 10. Full Experiment Outputs
-
-The complete experiment generates four main outputs.
-
-### 10.1 `full_lid_points.csv`
-
-Stores all individual LID estimates.
-
-Each row contains:
-
-```text
-dimensionality
-seed
-k
-train_position
-original_index
-lid
-```
-
-This file contains the complete point-level distribution and preserves all 112,000 LID estimates.
-
-It supports future:
-
-- histograms;
-- boxplots;
-- distribution analysis;
-- local diagnostics;
-- point-dependent pairing policies.
-
----
-
-### 10.2 `full_lid_by_seed.csv`
-
-Stores one row per dimensionality/seed configuration.
-
-For each configuration it contains:
-
-```text
-Mean LID
-Median LID
-Standard deviation
-Minimum
-Q25
-Q75
-Maximum
-```
-
-This file is particularly useful for studying reproducibility and variability between seeds.
-
----
-
-### 10.3 `full_lid_summary.csv`
-
-Aggregates the results across all ten seeds for each dimensionality.
-
-This is the main file used for the global analysis of LID behaviour.
-
----
-
-### 10.4 `full_lid_metadata.json`
-
-Stores the complete experiment configuration, including:
-
-- estimator;
-- neighbourhood size;
-- distance metric;
-- dimensions;
-- seeds;
-- dataset generator;
-- preprocessing;
-- split;
-- LID population;
-- package versions;
-- Python version;
-- operating system.
-
-This file was included to support reproducibility.
-
----
-
-## 11. Consistency Checks
-
-The generated files were checked for internal consistency.
-
-The full experiment contains:
-
-```text
-80 dimensionality/seed configurations
-112,000 individual LID estimates
-```
-
-No invalid, negative, infinite, or duplicated point-level estimates were identified.
-
-The descriptive statistics recalculated from `full_lid_points.csv` agree with those stored in `full_lid_by_seed.csv`.
-
-Likewise, aggregation of the seed-level results agrees with `full_lid_summary.csv`.
-
-The smoke and full runs also produce identical point-level results for the overlapping:
-
-```text
-seed 0 / 2D
-seed 0 / 50D
-```
-
-configurations.
-
-This confirms consistent execution of the experimental pipeline.
-
----
-
-## 12. Main Results
-
-The aggregated LID results for `k = 20` are:
+The aggregated results for the reference configuration `k = 20` are:
 
 | Dimensionality | Mean LID | Median LID |
 |---:|---:|---:|
@@ -430,7 +317,7 @@ The aggregated LID results for `k = 20` are:
 | 200 | 65.029 | 62.928 |
 | 500 | 107.492 | 104.007 |
 
-The main trend is:
+The observed relationship is:
 
 ```text
 Increasing dimensionality
@@ -466,15 +353,15 @@ The Spearman correlation between dimensionality and mean/median LID is:
 
 for every seed.
 
-This indicates an extremely consistent monotonic relationship in the controlled experimental setting.
+This establishes a highly consistent monotonic relationship in the controlled experiment.
 
 ---
 
-## 13. Stability Across Random Seeds
+## 11. Stability Across Random Seeds
 
-The estimator shows low variability across the ten seeds.
+The reference `k = 20` estimator shows low variability across the ten seeds.
 
-Approximate standard deviations of Mean LID are:
+Approximate standard deviations of Mean LID include:
 
 ```text
 2D    → 0.012
@@ -485,27 +372,19 @@ Approximate standard deviations of Mean LID are:
 500D  → 1.976
 ```
 
-Absolute variability increases as LID becomes larger, but relative variability remains low.
+Absolute variability increases because LID itself becomes larger.
 
-The coefficient of variation remains approximately between:
+However, relative variability remains low, with the coefficient of variation remaining approximately below 2%.
 
-```text
-0.5% and 1.8%
-```
-
-for Mean LID across the analysed settings.
-
-Even at 500 dimensions, relative variability remains below approximately 2%.
-
-Therefore, the observed dimensional trend is stable and not driven by individual random seeds.
+Therefore, the dimensional trend is stable and is not driven by a particular random seed.
 
 ---
 
-## 14. Behaviour in High Dimensions
+## 12. Behaviour in High Dimensions
 
-In lower-dimensional settings, the MLE-LID estimate is relatively close to the dimensionality of the synthetic construction.
+MLE-LID should not be interpreted as an exact reconstruction of total dimensionality.
 
-Examples:
+In lower-dimensional settings, estimates are relatively close to the dimensionality of the synthetic construction:
 
 ```text
 2D  → Mean LID ≈ 2.27
@@ -513,7 +392,7 @@ Examples:
 10D → Mean LID ≈ 9.79
 ```
 
-However, the estimator increasingly underestimates the absolute dimensionality at higher dimensions:
+At higher dimensions:
 
 ```text
 20D  → Mean LID ≈ 16.24
@@ -523,66 +402,45 @@ However, the estimator increasingly underestimates the absolute dimensionality a
 500D → Mean LID ≈ 107.49
 ```
 
-The approximate ratio between Mean LID and total dimensionality decreases substantially:
+the estimator increasingly under-recovers the total dimensionality.
 
-```text
-2D   → ~1.13
-5D   → ~1.10
-10D  → ~0.98
-20D  → ~0.81
-50D  → ~0.59
-100D → ~0.44
-200D → ~0.33
-500D → ~0.21
-```
+The appropriate interpretation in this project is therefore:
 
-This means the estimated LID should not be interpreted as an exact reconstruction of absolute dimensionality in high-dimensional regimes.
+> **LID is a relative indicator of local dimensional complexity.**
 
-For this project, a more appropriate interpretation is:
-
-> **LID is used as a relative indicator of local dimensional complexity.**
-
-The relevant information is therefore the ordering and local variation of LID rather than exact equality with the synthetic dimensionality.
+The relevant information is the ordering and local variation of LID rather than exact equality with the total number of dimensions.
 
 ---
 
-## 15. Point-Level Distribution
+## 13. Point-Level Variation
 
-The complete distributions are preserved in:
+The complete point-level distributions are stored in:
 
 ```text
 full_lid_points.csv
 ```
 
-The point-level values show that observations within the same global dimensionality can have different estimated LID values.
+Observations within the same dimensionality do not all receive identical LID values.
 
-Across the analysed dimensions:
+In general:
 
 ```text
 Mean LID > Median LID
 ```
 
-which indicates some right-skewness in the distributions.
+indicating some right-skewness in the distributions.
 
-For example, at 500 dimensions the typical distribution is approximately:
+This local variation is important for the future adaptive method.
 
-```text
-Q25     ≈ 90.15
-Median  ≈ 104.01
-Q75     ≈ 120.67
-```
-
-This point-level variation is important for the future adaptive mechanism.
-
-If all observations had almost identical LID:
+If:
 
 ```text
 LID(x1) ≈ LID(x2) ≈ ... ≈ LID(xn)
 ```
 
-then using a point-dependent parameter would provide little information.
+then a point-dependent adaptive policy would contain little information.
 
-Instead, the observed local variation provides motivation for studying:
+Instead, the observed variation motivates studying:
 
 ```text
 α(x) = f(LID(x))
@@ -592,133 +450,568 @@ at observation level.
 
 ---
 
-## 16. Figures
+# LID ↔ ADERH Relationship Analysis
 
-Three main figures were generated and stored in:
+## 14. Research Question
+
+After validating the estimator, the next question was:
+
+> **When LID increases, does the geometry used by ADERH become less informative?**
+
+The analysis is implemented in:
 
 ```text
-lid_analysis/figures/
+lid_analysis/analyze_lid_aderh_relationship.py
 ```
 
-### `lid_evolucao_dimensionalidade.png`
+It does not rerun ADERH.
 
-Shows mean and median LID as dimensionality increases.
-
-It highlights both:
+Instead, it combines:
 
 ```text
-Dimensionality ↑
+LID results
+        +
+existing ADERH baseline results
         ↓
-Estimated LID ↑
+merge by dimensionality + seed
 ```
 
-and the increasing difference between total dimensionality and estimated LID in high-dimensional regimes.
+This produces direct comparisons for the same 80 experimental configurations.
 
 ---
 
-### `lid_quartis_dimensionalidade.png`
+## 15. Analysed Relationships
 
-Shows:
-
-```text
-Q25
-Median
-Q75
-```
-
-for each dimensionality.
-
-This demonstrates both the global increase in LID and the presence of point-level variation.
-
----
-
-### `lid_estabilidade_seeds.png`
-
-Shows the coefficient of variation across the ten seeds.
-
-This figure supports the conclusion that the LID trend is stable across repeated experimental runs.
-
----
-
-## 17. Current Conclusions
-
-The current experiment establishes that, within the controlled synthetic ADERH baseline:
-
-1. MLE-LID can be computed reliably for every training observation.
-2. Estimated LID increases monotonically with dimensionality.
-3. The trend occurs in all ten random seeds.
-4. Variability between seeds remains low.
-5. Point-level LID distributions contain meaningful local variation.
-6. Absolute dimensionality is increasingly underestimated in high-dimensional regimes.
-
-Therefore, the current evidence supports using MLE-LID as a:
-
-> **stable relative indicator of local dimensional complexity**
-
-for the next stage of the project.
-
----
-
-## 18. What Has Not Yet Been Established
-
-The current analysis does **not yet demonstrate**:
-
-```text
-LID ↑
-    ↓
-ADERH performance ↓
-```
-
-nor does it demonstrate:
-
-```text
-LID ↑
-    ↓
-More Random Pairing
-```
-
-The second relationship is a working research hypothesis, not an established consequence of LID.
-
-The next experiments must determine whether LID is actually associated with the geometric failure mode observed in ADERH.
-
----
-
-## 19. Next Experimental Stage
-
-The next analysis will investigate:
+Four relationships were investigated:
 
 ```text
 LID ↔ Relative Contrast
-
 LID ↔ Uncovered Fraction
-
 LID ↔ ROC-AUC
-
 LID ↔ Average Precision
 ```
 
-The objective is to determine whether regions or configurations with greater local dimensional complexity are associated with:
+These represent two complementary aspects.
 
-- stronger distance concentration;
-- lower hypersphere coverage;
-- reduced anomaly discrimination;
-- lower ADERH predictive performance.
+### Geometry
 
-Only after this relationship is understood should LID be used to define the adaptive pairing policy.
+```text
+Relative Contrast
+Uncovered Fraction
+```
 
-Further work will then include:
+### Detection Performance
 
-- sensitivity analysis for `k`;
-- Local Pairing;
-- Fixed Hybrid Pairing;
-- definition of `α(x) = f(LID(x))`;
-- LID-Aware Adaptive Pairing;
-- ablation studies;
-- interpretability analysis.
+```text
+ROC-AUC
+Average Precision
+```
+
+This distinction is important because the objective is not merely to show that ADERH performance decreases.
+
+The analysis also investigates whether the geometric conditions used by ADERH deteriorate at the same time.
 
 ---
 
-## 20. References
+## 16. Interpretation of the Metrics
+
+### Relative Contrast
+
+Relative Contrast measures how distinguishable nearby observations are from more distant observations.
+
+High values indicate clearer distance structure.
+
+Conceptually:
+
+```text
+High Relative Contrast
+        ↓
+near and far are clearly distinguishable
+```
+
+When Relative Contrast approaches 1:
+
+```text
+nearest distances ≈ other distances
+```
+
+and distance information becomes less discriminative.
+
+---
+
+### Uncovered Fraction
+
+Uncovered Fraction represents the proportion of test observations that are not covered by any ADERH hypersphere.
+
+Therefore:
+
+```text
+Uncovered Fraction ↑
+        ↓
+hypersphere coverage deteriorates
+```
+
+High values indicate that the geometric representation created by ADERH is failing to cover increasing portions of the data.
+
+---
+
+### ROC-AUC
+
+ROC-AUC measures the overall ability of ADERH anomaly scores to rank anomalies above normal observations.
+
+```text
+ROC-AUC ≈ 1.0
+→ strong discrimination
+
+ROC-AUC ≈ 0.5
+→ approximately random discrimination
+```
+
+---
+
+### Average Precision
+
+Average Precision summarizes precision/recall performance and is particularly useful when anomalies represent a small minority of the dataset.
+
+In the controlled baseline:
+
+```text
+anomalies = 5%
+```
+
+Therefore, Average Precision provides an important view of how well ADERH identifies the minority anomaly class.
+
+---
+
+## 17. Relationship Results
+
+Using values aggregated across the ten seeds for each dimensionality:
+
+| Relationship | Spearman ρ | Direction |
+|---|---:|---|
+| Mean LID ↔ Relative Contrast | -1.000 | Negative |
+| Mean LID ↔ Uncovered Fraction | +0.976 | Positive |
+| Mean LID ↔ ROC-AUC | -1.000 | Negative |
+| Mean LID ↔ Average Precision | -1.000 | Negative |
+
+All four relationships are statistically very strong in this controlled setting.
+
+More importantly, their direction is also reproduced across all ten random seeds.
+
+```text
+Relative Contrast:
+10/10 seeds → negative relationship
+
+Uncovered Fraction:
+10/10 seeds → positive relationship
+
+ROC-AUC:
+10/10 seeds → negative relationship
+
+Average Precision:
+10/10 seeds → negative relationship
+```
+
+---
+
+## 18. Global Interpretation
+
+The observed pattern is:
+
+```text
+LID ↑
+ │
+ ├── Relative Contrast ↓
+ │
+ ├── Uncovered Fraction ↑
+ │
+ ├── ROC-AUC ↓
+ │
+ └── Average Precision ↓
+```
+
+This supports the following interpretation:
+
+```text
+Higher dimensional complexity
+        ↓
+Higher estimated LID
+        ↓
+Distance structure becomes less discriminative
+        ↓
+ADERH geometric representation deteriorates
+        ↓
+Anomaly-detection performance deteriorates
+```
+
+The four metrics therefore provide complementary evidence.
+
+Relative Contrast shows deterioration in distance geometry.
+
+Uncovered Fraction shows deterioration in hypersphere coverage.
+
+ROC-AUC and Average Precision show the corresponding loss in anomaly-detection performance.
+
+---
+
+## 19. Non-Linearity of the Failure Mode
+
+The relationship is strongly monotonic but should not be interpreted as necessarily linear.
+
+The graphs show different phases of degradation.
+
+Relative Contrast decreases strongly at relatively low dimensionalities and then approaches values close to 1.
+
+Uncovered Fraction remains low during the earlier dimensional regimes but increases sharply at higher dimensionalities.
+
+At approximately 200D and above, coverage is almost completely lost.
+
+ROC-AUC and Average Precision also progressively deteriorate until the detector approaches non-informative behaviour.
+
+This indicates that ADERH degradation is better interpreted as a changing geometric regime rather than as a simple linear decrease.
+
+---
+
+## 20. Important Causal Limitation
+
+The observed correlations should not be interpreted as:
+
+```text
+LID ↑
+causes
+ADERH performance ↓
+```
+
+Dimensionality is a common experimental driver:
+
+```text
+              Dimensionality ↑
+               /          \
+              ↓            ↓
+           LID ↑      ADERH degradation
+```
+
+Therefore, the experiment demonstrates:
+
+> **association and consistency of trends**
+
+rather than a causal effect of LID on ADERH.
+
+The result that matters for the proposed extension is that LID consistently tracks the geometric regime in which ADERH becomes less effective.
+
+---
+
+# Sensitivity Analysis of k
+
+## 21. Motivation
+
+MLE-LID depends on the number of nearest neighbours used to estimate local dimensionality.
+
+Therefore, conclusions obtained using only:
+
+```text
+k = 20
+```
+
+could potentially be an artefact of that specific neighbourhood size.
+
+A sensitivity analysis was therefore performed using:
+
+```text
+k = 5, 10, 20, 30
+```
+
+The analysis is implemented in:
+
+```text
+lid_analysis/analyze_k_sensitivity.py
+```
+
+The objective is not to identify the value of `k` that produces the strongest correlation.
+
+Instead, the question is:
+
+> **Do the scientific conclusions remain stable when the local neighbourhood size changes?**
+
+---
+
+## 22. Sensitivity Protocol
+
+For each value of `k`, LID is calculated using:
+
+- the same dataset generator;
+- the same dimensionalities;
+- the same random seeds;
+- the same train/test splits;
+- the same MinMax preprocessing;
+- the same training observations.
+
+ADERH is not rerun.
+
+The existing ADERH baseline metrics are reused.
+
+Therefore:
+
+```text
+Same ADERH experiment
+        ↑
+        │
+LID k=5
+LID k=10
+LID k=20
+LID k=30
+```
+
+This isolates the effect of changing the LID neighbourhood size.
+
+---
+
+## 23. Sensitivity Results
+
+The main result is that the direction of every LID ↔ ADERH relationship remains unchanged for all tested values of `k`.
+
+| Metric | k=5 | k=10 | k=20 | k=30 |
+|---|---:|---:|---:|---:|
+| Relative Contrast | -1.000 | -1.000 | -1.000 | -1.000 |
+| Uncovered Fraction | +0.976 | +0.976 | +0.976 | +0.976 |
+| ROC-AUC | -1.000 | -1.000 | -1.000 | -1.000 |
+| Average Precision | -1.000 | -1.000 | -1.000 | -1.000 |
+
+In addition:
+
+```text
+all four relationships
+        ×
+all four k values
+        ×
+all ten random seeds
+```
+
+maintain the expected direction.
+
+Therefore:
+
+> **The main LID–ADERH conclusions are robust to the tested neighbourhood sizes.**
+
+---
+
+## 24. Effect of k on Absolute LID
+
+Robustness of the relationship does not mean that `k` has no effect on the estimator.
+
+Changing `k` changes the absolute magnitude and variability of MLE-LID estimates.
+
+Conceptually:
+
+```text
+smaller k
+   ↓
+more local neighbourhood
+   ↓
+greater estimate variability
+```
+
+while larger neighbourhoods provide more smoothing.
+
+Therefore:
+
+```text
+LID_k=5(x) ≠ LID_k=20(x)
+```
+
+in general.
+
+However, the important finding is that the **relative dimensional ordering and the relationships with ADERH degradation remain stable**.
+
+Thus, the correct conclusion is not:
+
+> Changing `k` has no effect.
+
+It is:
+
+> **Changing `k` affects the numerical LID estimates, but does not alter the main scientific conclusions in the tested range.**
+
+---
+
+## 25. Why k Is Not Selected by Correlation Strength
+
+This sensitivity study must not be used to choose:
+
+```text
+best k = k with strongest LID ↔ ADERH correlation
+```
+
+That would make the estimator selection dependent on the outcome the experiment is intended to explain.
+
+Instead, `k = 20` remains a reference configuration.
+
+The sensitivity experiment is used only to evaluate whether conclusions are robust to alternative reasonable neighbourhood sizes.
+
+This analysis can later be reported as part of the project's **ablation/sensitivity study**.
+
+---
+
+## 26. Reproducibility Note
+
+The sensitivity-analysis implementation can reuse the existing `k = 20` results generated during the original LID analysis.
+
+For strict package-environment comparability across all four values of `k`, the reference experiment can also be recomputed using:
+
+```bash
+python -m lid_analysis.analyze_k_sensitivity --force-recompute-k20
+```
+
+This ensures that:
+
+```text
+k=5
+k=10
+k=20
+k=30
+```
+
+are all generated under exactly the same current software environment.
+
+---
+
+# Generated Artifacts
+
+## 27. Main LID Outputs
+
+```text
+lid_analysis/results/
+├── full_lid_points.csv
+├── full_lid_by_seed.csv
+├── full_lid_summary.csv
+└── full_lid_metadata.json
+```
+
+---
+
+## 28. LID ↔ ADERH Outputs
+
+```text
+lid_analysis/results/relationships/
+├── lid_aderh_merged.csv
+├── relationship_by_dimension.csv
+├── correlations_by_seed.csv
+├── correlations_by_dimension.csv
+└── relationship_summary.json
+```
+
+---
+
+## 29. k-Sensitivity Outputs
+
+```text
+lid_analysis/results/k_sensitivity/
+├── full_k5_*
+├── full_k10_*
+├── full_k30_*
+├── k_sensitivity_lid_by_seed.csv
+├── k_sensitivity_merged.csv
+├── k_sensitivity_by_dimension.csv
+├── k_sensitivity_correlations.csv
+├── k_sensitivity_correlations_by_seed.csv
+├── k_direction_consistency.csv
+├── k_robustness_summary.csv
+└── k_sensitivity_summary.json
+```
+
+---
+
+# Figures
+
+## 30. Main LID Figures
+
+```text
+lid_analysis/figures/
+├── lid_evolucao_dimensionalidade.png
+├── lid_quartis_dimensionalidade.png
+└── lid_estabilidade_seeds.png
+```
+
+These show:
+
+- LID growth with dimensionality;
+- point-level distribution and quartiles;
+- stability across random seeds.
+
+---
+
+## 31. LID ↔ ADERH Figures
+
+```text
+lid_analysis/figures/relationships/
+├── lid_vs_relative_contrast.png
+├── lid_vs_uncovered_fraction.png
+├── lid_vs_roc_auc.png
+└── lid_vs_average_precision.png
+```
+
+These figures visualize the relationship between increasing Mean LID and ADERH geometric/performance degradation.
+
+---
+
+## 32. k-Sensitivity Figures
+
+```text
+lid_analysis/figures/k_sensitivity/
+├── lid_by_k_vs_dimensionality.png
+└── correlations_by_k.png
+```
+
+The first shows how LID estimates change across dimensionality for different neighbourhood sizes.
+
+The second shows whether the LID ↔ ADERH correlation structure remains stable across `k`.
+
+---
+
+# Overall Conclusions
+
+## 33. What Has Been Established
+
+Within the controlled ADERH dimensionality baseline, the current evidence establishes that:
+
+1. MLE-LID can be calculated reliably for every training observation.
+2. Estimated LID increases monotonically with dimensional complexity.
+3. This trend is reproduced across all ten random seeds.
+4. Point-level LID contains local variation.
+5. Higher LID is associated with lower Relative Contrast.
+6. Higher LID is associated with greater hypersphere non-coverage.
+7. Higher LID is associated with lower ROC-AUC.
+8. Higher LID is associated with lower Average Precision.
+9. These relationships remain stable for `k = 5, 10, 20, 30`.
+
+Therefore, the current evidence supports treating LID as a:
+
+> **stable local geometric signal associated with the dimensional regime in which ADERH loses geometric informativeness and anomaly-detection performance.**
+
+---
+
+## 34. What Has Not Been Established
+
+The experiments do not establish that:
+
+```text
+LID ↑
+causes
+ADERH degradation
+```
+
+and they do not yet establish that:
+
+```text
+LID ↑
+        ↓
+More Random Pairing
+        ↓
+Better ADERH
+```
+
+The mapping between LID and pairing behaviour remains a research hypothesis that must now be tested experimentally.
+
+## 35. References
 
 - Levina, E., & Bickel, P. J. (2004). *Maximum Likelihood Estimation of Intrinsic Dimension*. NeurIPS.
 - Amsaleg, L. et al. (2015). *Estimating Local Intrinsic Dimensionality*. KDD.
