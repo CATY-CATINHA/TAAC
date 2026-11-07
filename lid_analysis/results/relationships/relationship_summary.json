@@ -1,0 +1,89 @@
+{
+  "analysis_type": "Association analysis between MLE-LID and ADERH baseline metrics",
+  "artifacts": {
+    "by_dimension": "lid_analysis\\results\\relationships\\relationship_by_dimension.csv",
+    "correlations_by_dimension": "lid_analysis\\results\\relationships\\correlations_by_dimension.csv",
+    "correlations_by_seed": "lid_analysis\\results\\relationships\\correlations_by_seed.csv",
+    "figures": {
+      "average_precision": "lid_analysis\\figures\\relationships\\lid_vs_average_precision.png",
+      "relative_contrast": "lid_analysis\\figures\\relationships\\lid_vs_relative_contrast.png",
+      "roc_auc": "lid_analysis\\figures\\relationships\\lid_vs_roc_auc.png",
+      "uncovered_fraction": "lid_analysis\\figures\\relationships\\lid_vs_uncovered_fraction.png"
+    },
+    "merged": "lid_analysis\\results\\relationships\\lid_aderh_merged.csv"
+  },
+  "correlation": "Spearman rank correlation",
+  "dimensional_correlations": {
+    "average_precision": {
+      "p_value": 0.0,
+      "spearman_rho": -1.0
+    },
+    "relative_contrast": {
+      "p_value": 0.0,
+      "spearman_rho": -1.0
+    },
+    "roc_auc": {
+      "p_value": 0.0,
+      "spearman_rho": -1.0
+    },
+    "uncovered_fraction": {
+      "p_value": 3.436402807612141e-05,
+      "spearman_rho": 0.9759000729485332
+    }
+  },
+  "dimensions": [
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500
+  ],
+  "important_interpretation_note": "Dimensionality is a common driver of both LID and ADERH degradation in this controlled experiment. Therefore, these correlations show association and consistency of trends, not a causal effect of LID on ADERH.",
+  "lid_primary_metric": "lid_mean",
+  "lid_secondary_metric": "lid_median",
+  "n_configurations": 80,
+  "n_dimensions": 8,
+  "n_seeds": 10,
+  "research_question": "When LID increases, does the geometry used by ADERH become less informative?",
+  "seed_direction_consistency": [
+    {
+      "aderh_metric": "relative_contrast",
+      "expected_direction": "negative",
+      "fraction_matching_expected_direction": 1.0,
+      "mean_seed_spearman_rho": -1.0,
+      "median_seed_spearman_rho": -1.0,
+      "n_matching_expected_direction": 10,
+      "n_valid_seeds": 10
+    },
+    {
+      "aderh_metric": "uncovered_fraction",
+      "expected_direction": "positive",
+      "fraction_matching_expected_direction": 1.0,
+      "mean_seed_spearman_rho": 0.9410488992562482,
+      "median_seed_spearman_rho": 0.938590635448906,
+      "n_matching_expected_direction": 10,
+      "n_valid_seeds": 10
+    },
+    {
+      "aderh_metric": "roc_auc",
+      "expected_direction": "negative",
+      "fraction_matching_expected_direction": 1.0,
+      "mean_seed_spearman_rho": -0.998805959477601,
+      "median_seed_spearman_rho": -1.0,
+      "n_matching_expected_direction": 10,
+      "n_valid_seeds": 10
+    },
+    {
+      "aderh_metric": "average_precision",
+      "expected_direction": "negative",
+      "fraction_matching_expected_direction": 1.0,
+      "mean_seed_spearman_rho": -0.998805959477601,
+      "median_seed_spearman_rho": -1.0,
+      "n_matching_expected_direction": 10,
+      "n_valid_seeds": 10
+    }
+  ]
+}

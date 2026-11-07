@@ -1,0 +1,99 @@
+{
+  "artifacts": {
+    "by_dimension": "lid_analysis\\results\\k_sensitivity\\k_sensitivity_by_dimension.csv",
+    "correlation_figure": "lid_analysis\\figures\\k_sensitivity\\correlations_by_k.png",
+    "correlations": "lid_analysis\\results\\k_sensitivity\\k_sensitivity_correlations.csv",
+    "correlations_by_seed": "lid_analysis\\results\\k_sensitivity\\k_sensitivity_correlations_by_seed.csv",
+    "direction_consistency": "lid_analysis\\results\\k_sensitivity\\k_direction_consistency.csv",
+    "lid_by_seed": "lid_analysis\\results\\k_sensitivity\\k_sensitivity_lid_by_seed.csv",
+    "lid_figure": "lid_analysis\\figures\\k_sensitivity\\lid_by_k_vs_dimensionality.png",
+    "merged": "lid_analysis\\results\\k_sensitivity\\k_sensitivity_merged.csv",
+    "robustness": "lid_analysis\\results\\k_sensitivity\\k_robustness_summary.csv"
+  },
+  "dimensions": [
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500
+  ],
+  "experiment": "MLE-LID k sensitivity analysis",
+  "interpretation_note": "Stable correlation directions across k indicate that the conclusions are not an artefact of the specific reference choice k=20. Correlation strength should not be used to select k.",
+  "k_values": [
+    5,
+    10,
+    20,
+    30
+  ],
+  "lid_sources": {
+    "10": "lid_analysis\\results\\k_sensitivity\\full_k10_lid_by_seed.csv",
+    "20": "lid_analysis\\results\\k_sensitivity\\full_k20_lid_by_seed.csv",
+    "30": "lid_analysis\\results\\k_sensitivity\\full_k30_lid_by_seed.csv",
+    "5": "lid_analysis\\results\\k_sensitivity\\full_k5_lid_by_seed.csv"
+  },
+  "metric_results": {
+    "average_precision": {
+      "all_seeds_match_expected_direction_for_all_k": true,
+      "direction_stable_across_all_k": true,
+      "expected_direction": "negative",
+      "rho_by_k": {
+        "10": -1.0,
+        "20": -1.0,
+        "30": -1.0,
+        "5": -1.0
+      }
+    },
+    "relative_contrast": {
+      "all_seeds_match_expected_direction_for_all_k": true,
+      "direction_stable_across_all_k": true,
+      "expected_direction": "negative",
+      "rho_by_k": {
+        "10": -1.0,
+        "20": -1.0,
+        "30": -1.0,
+        "5": -1.0
+      }
+    },
+    "roc_auc": {
+      "all_seeds_match_expected_direction_for_all_k": true,
+      "direction_stable_across_all_k": true,
+      "expected_direction": "negative",
+      "rho_by_k": {
+        "10": -1.0,
+        "20": -1.0,
+        "30": -1.0,
+        "5": -1.0
+      }
+    },
+    "uncovered_fraction": {
+      "all_seeds_match_expected_direction_for_all_k": true,
+      "direction_stable_across_all_k": true,
+      "expected_direction": "positive",
+      "rho_by_k": {
+        "10": 0.9759000729485332,
+        "20": 0.9759000729485332,
+        "30": 0.9759000729485332,
+        "5": 0.9759000729485332
+      }
+    }
+  },
+  "objective": "Determine whether the relationship between LID and ADERH degradation is robust to the choice of neighbourhood size k.",
+  "overall_direction_stable_across_all_k": true,
+  "reference_k": 20,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "selection_policy": "k is not selected according to the strongest correlation with ADERH. This experiment is a sensitivity analysis, not performance tuning."
+}

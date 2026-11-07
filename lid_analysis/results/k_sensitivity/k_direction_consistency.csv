@@ -1,0 +1,17 @@
+k,aderh_metric,expected_direction,n_valid_seeds,n_matching_expected_direction,fraction_matching_expected_direction,mean_seed_spearman_rho,median_seed_spearman_rho
+5,relative_contrast,negative,10,10,1.0,-1.0,-1.0
+5,uncovered_fraction,positive,10,10,1.0,0.9410488992562482,0.938590635448906
+5,roc_auc,negative,10,10,1.0,-0.998805959477601,-1.0
+5,average_precision,negative,10,10,1.0,-0.998805959477601,-1.0
+10,relative_contrast,negative,10,10,1.0,-1.0,-1.0
+10,uncovered_fraction,positive,10,10,1.0,0.9410488992562482,0.938590635448906
+10,roc_auc,negative,10,10,1.0,-0.998805959477601,-1.0
+10,average_precision,negative,10,10,1.0,-0.998805959477601,-1.0
+20,relative_contrast,negative,10,10,1.0,-1.0,-1.0
+20,uncovered_fraction,positive,10,10,1.0,0.9410488992562482,0.938590635448906
+20,roc_auc,negative,10,10,1.0,-0.998805959477601,-1.0
+20,average_precision,negative,10,10,1.0,-0.998805959477601,-1.0
+30,relative_contrast,negative,10,10,1.0,-1.0,-1.0
+30,uncovered_fraction,positive,10,10,1.0,0.9410488992562482,0.938590635448906
+30,roc_auc,negative,10,10,1.0,-0.998805959477601,-1.0
+30,average_precision,negative,10,10,1.0,-0.998805959477601,-1.0

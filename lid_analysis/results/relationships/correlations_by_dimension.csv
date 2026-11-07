@@ -1,0 +1,9 @@
+lid_metric,aderh_metric,n_dimensions,spearman_rho,p_value
+lid_mean,relative_contrast,8,-1.0,0.0
+lid_mean,uncovered_fraction,8,0.9759000729485332,3.436402807612141e-05
+lid_mean,roc_auc,8,-1.0,0.0
+lid_mean,average_precision,8,-1.0,0.0
+lid_median,relative_contrast,8,-1.0,0.0
+lid_median,uncovered_fraction,8,0.9759000729485332,3.436402807612141e-05
+lid_median,roc_auc,8,-1.0,0.0
+lid_median,average_precision,8,-1.0,0.0
