@@ -173,7 +173,7 @@ class BasePairingADERH(ADERH):
             )
 
             self._sq_radii[i] = np.repeat(
-                sq_pair_dist.reshape(-1, 1) / 2,
+                sq_pair_dist.reshape(-1, 1) / 4,
                 2,
                 axis=1
             ).reshape(-1)

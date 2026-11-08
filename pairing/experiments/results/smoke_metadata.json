@@ -1,16 +1,16 @@
 {
   "artifacts": {
     "figures": [
-      "pairing_experiments\\figures\\smoke_roc_auc.png",
-      "pairing_experiments\\figures\\smoke_average_precision.png",
-      "pairing_experiments\\figures\\smoke_test_uncovered_fraction.png",
-      "pairing_experiments\\figures\\smoke_fit_time_seconds.png",
-      "pairing_experiments\\figures\\smoke_relative_contrast.png"
+      "pairing\\experiments\\figures\\smoke_roc_auc.png",
+      "pairing\\experiments\\figures\\smoke_average_precision.png",
+      "pairing\\experiments\\figures\\smoke_test_uncovered_fraction.png",
+      "pairing\\experiments\\figures\\smoke_fit_time_seconds.png",
+      "pairing\\experiments\\figures\\smoke_relative_contrast.png"
     ],
-    "raw_results": "pairing_experiments\\results\\smoke_raw_results.csv",
-    "summary": "pairing_experiments\\results\\smoke_summary.csv"
+    "raw_results": "pairing\\experiments\\results\\smoke_raw_results.csv",
+    "summary": "pairing\\experiments\\results\\smoke_summary.csv"
   },
-  "created_utc": "2026-11-08T14:21:03.548122+00:00",
+  "created_utc": "2026-11-08T15:59:33.799617+00:00",
   "dataset": {
     "anomaly_distribution": "N([4, 4], I)",
     "contamination": 0.05,
@@ -40,6 +40,14 @@
       "parameters": {
         "contamination": 0.1,
         "k_neighbors": 5,
+        "n": 18,
+        "n_estimators": 256
+      }
+    },
+    "original": {
+      "class": "ADERH",
+      "parameters": {
+        "contamination": 0.1,
         "n": 18,
         "n_estimators": 256
       }
