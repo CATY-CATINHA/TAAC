@@ -150,33 +150,36 @@ class BasePairingADERH(ADERH):
             )
             partners = X[partner_idx]
 
-            # Recover partner positions within the sampled anchors.
-            anchor_positions = {
-                idx: position
-                for position, idx in enumerate(anchor_idx)
-            }
-
-            partner_positions = np.array([
-                anchor_positions[idx]
-                for idx in partner_idx
-            ])
-
-            # Preserve the original ADERH radius calculation.
+            # Calculate squared distances between each anchor and its actual partner.
             sq_pair_dist = np.sum(
-                (anchors - X[partner_positions]) ** 2,
+                (anchors - partners) ** 2,
                 axis=1
             )
 
+            # Store centers: all anchors followed by all partners.
             self._centers[i] = np.concatenate(
                 [anchors, partners],
                 axis=0
             )
 
-            self._sq_radii[i] = np.repeat(
-                sq_pair_dist.reshape(-1, 1) / 4,
-                2,
-                axis=1
-            ).reshape(-1)
+            # Match the radius ordering to the center ordering.
+            # Keep division by 2 to match the original ADERH radius scale.
+            pair_radii = sq_pair_dist / 2
+
+            self._sq_radii[i] = np.concatenate(
+                [pair_radii, pair_radii]
+            )
+
+            # Verify that each anchor and its partner have matching radii.
+            assert np.allclose(
+                self._sq_radii[i][:n_anchors],
+                self._sq_radii[i][n_anchors:]
+            )
+
+            assert np.allclose(
+                self._sq_radii[i][:n_anchors],
+                sq_pair_dist / 2
+            )
 
         self.n_features_in_ = n_features
 
