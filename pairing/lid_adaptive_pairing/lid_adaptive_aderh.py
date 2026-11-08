@@ -25,6 +25,7 @@ class LIDAdaptiveADERH(BasePairingADERH):
         alpha=0.5,
         lid_k=20,
         direction="high_local",
+        strategy="rank"
     ):
         super().__init__(
             n_estimators=n_estimators,
@@ -37,6 +38,7 @@ class LIDAdaptiveADERH(BasePairingADERH):
         self.alpha = alpha
         self.lid_k = lid_k
         self.direction = direction
+        self.strategy = strategy
 
     def fit(self, X, y=None):
         """
@@ -60,26 +62,52 @@ class LIDAdaptiveADERH(BasePairingADERH):
                 "direction must be 'high_local' or 'high_random'."
             )
 
+        if self.strategy not in ("rank", "continuous"):
+            raise ValueError(
+                "strategy must be 'rank' or 'continuous'."
+            )
+
         if not 1 <= self.k_neighbors < n_anchors:
             raise ValueError(
                 "k_neighbors must be between 1 and n_anchors - 1."
             )
 
-        n_local = int(np.floor(self.alpha * n_anchors + 0.5))
-
-        # LID values corresponding to the sampled anchors.
         anchor_lids = self.lid_values_[anchor_idx]
 
-        # Rank anchors according to their LID.
-        if self.direction == "high_local":
-            # Highest LID values are selected for local pairing.
-            ranked_positions = np.argsort(-anchor_lids)
-        else:
-            # Lowest LID values are selected for local pairing.
-            ranked_positions = np.argsort(anchor_lids)
+        if self.strategy == "rank":
 
-        # Select exactly n_local anchors.
-        local_positions = ranked_positions[:n_local]
+            # Original strategy: select a fixed proportion of anchors.
+            n_local = int(np.floor(self.alpha * n_anchors + 0.5))
+
+            if self.direction == "high_local":
+                ranked_positions = np.argsort(-anchor_lids)
+            else:
+                ranked_positions = np.argsort(anchor_lids)
+
+            local_positions = ranked_positions[:n_local]
+
+        else:
+
+            # Continuous strategy: assign a local-pairing probability
+            # according to each anchor's relative LID.
+
+            from scipy.stats import rankdata
+
+            lid_ranks = rankdata(anchor_lids, method="average")
+
+            lid_scores = (lid_ranks - 1) / (n_anchors - 1)
+
+            if self.direction == "high_random":
+                lid_scores = 1 - lid_scores
+
+            probabilities = self.alpha * lid_scores
+
+            # Each anchor independently decides whether to use local pairing.
+            random_values = rnd.random(n_anchors)
+
+            local_positions = np.flatnonzero(
+                random_values < probabilities
+            )
 
         return self._select_unique_partners(
             X,

@@ -10,7 +10,7 @@
     "raw_results": "pairing\\experiments\\results\\full_raw_results.csv",
     "summary": "pairing\\experiments\\results\\full_summary.csv"
   },
-  "created_utc": "2026-11-08T17:55:50.979705+00:00",
+  "created_utc": "2026-11-08T20:41:21.061600+00:00",
   "dataset": {
     "anomaly_distribution": "N([4, 4], I)",
     "contamination": 0.05,
@@ -39,6 +39,32 @@
         "k_neighbors": 5,
         "n": 18,
         "n_estimators": 256
+      }
+    },
+    "lid_adaptive_continuous_high_local": {
+      "class": "LIDAdaptiveADERH",
+      "parameters": {
+        "alpha": 0.5,
+        "contamination": 0.1,
+        "direction": "high_local",
+        "k_neighbors": 5,
+        "lid_k": 20,
+        "n": 18,
+        "n_estimators": 256,
+        "strategy": "continuous"
+      }
+    },
+    "lid_adaptive_continuous_high_random": {
+      "class": "LIDAdaptiveADERH",
+      "parameters": {
+        "alpha": 0.5,
+        "contamination": 0.1,
+        "direction": "high_random",
+        "k_neighbors": 5,
+        "lid_k": 20,
+        "n": 18,
+        "n_estimators": 256,
+        "strategy": "continuous"
       }
     },
     "lid_adaptive_high_local": {

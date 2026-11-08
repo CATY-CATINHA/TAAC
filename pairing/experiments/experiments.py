@@ -92,6 +92,32 @@ MODEL_CONFIGS = {
             "direction": "high_random",
         },
     },
+    "lid_adaptive_continuous_high_local": {
+        "class": LIDAdaptiveADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "k_neighbors": 5,
+            "alpha": 0.5,
+            "lid_k": 20,
+            "direction": "high_local",
+            "strategy": "continuous",
+        },
+    },
+    "lid_adaptive_continuous_high_random": {
+        "class": LIDAdaptiveADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "k_neighbors": 5,
+            "alpha": 0.5,
+            "lid_k": 20,
+            "direction": "high_random",
+            "strategy": "continuous",
+        },
+    },
 }
 
 SUMMARY_METRICS = (
