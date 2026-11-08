@@ -30,6 +30,7 @@ from sklearn.preprocessing import MinMaxScaler
 from aderh import ADERH
 from pairing.local_pairing.local_aderh import LocalADERH
 from pairing.hybrid_pairing.hybrid_aderh import HybridADERH
+from pairing.lid_adaptive_pairing.lid_adaptive_aderh import LIDAdaptiveADERH
 
 from .data_generation import DEFAULT_DIMENSIONS, make_nested_datasets
 from .metrics import relative_contrast
@@ -65,6 +66,30 @@ MODEL_CONFIGS = {
             "contamination": 0.1,
             "k_neighbors": 5,
             "alpha": 0.5,
+        },
+    },
+    "lid_adaptive_high_local": {
+        "class": LIDAdaptiveADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "k_neighbors": 5,
+            "alpha": 0.5,
+            "lid_k": 20,
+            "direction": "high_local",
+        },
+    },
+    "lid_adaptive_high_random": {
+        "class": LIDAdaptiveADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "k_neighbors": 5,
+            "alpha": 0.5,
+            "lid_k": 20,
+            "direction": "high_random",
         },
     },
 }
