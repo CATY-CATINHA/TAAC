@@ -1,0 +1,56 @@
+{
+  "artifacts": {
+    "by_seed": "lid_analysis\\results\\smoke_lid_by_seed.csv",
+    "point_level_lid": "lid_analysis\\results\\smoke_lid_points.csv",
+    "summary": "lid_analysis\\results\\smoke_lid_summary.csv"
+  },
+  "dataset": {
+    "anomaly_distribution": "N([4, 4], I)",
+    "contamination": 0.05,
+    "generator": "aderh_distance.data_generation.make_nested_datasets",
+    "informative_dimensions": 2,
+    "irrelevant_distribution": "independent N(0, 1) for both classes",
+    "n_samples": 2000,
+    "nested_dimensions": true,
+    "normal_distribution": "N([0, 0], I)"
+  },
+  "dimensions": [
+    2,
+    50
+  ],
+  "environment": {
+    "packages": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.4.2"
+    },
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.11 | packaged by Anaconda, Inc. | (main, Jun  5 2025, 12:58:53) [MSC v.1929 64 bit (AMD64)]"
+  },
+  "experiment": "MLE-LID analysis on ADERH distance-concentration baseline",
+  "lid": {
+    "distance": "euclidean",
+    "estimator": "MLE-LID",
+    "k": 20,
+    "labels_used_for_lid": false,
+    "population": "all scaled training observations",
+    "self_neighbor_excluded": true
+  },
+  "mode": "smoke",
+  "preprocessing": {
+    "fit_population": "training split only",
+    "function": "aderh_distance.experiments.scale_train_test",
+    "method": "MinMaxScaler"
+  },
+  "seeds": [
+    0
+  ],
+  "split": {
+    "function": "aderh_distance.experiments._split_indices",
+    "labels_used_only_for_split": true,
+    "method": "StratifiedShuffleSplit",
+    "same_indices_across_dimensions_within_seed": true,
+    "test_fraction": 0.3,
+    "train_fraction": 0.7
+  }
+}

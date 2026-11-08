@@ -1,0 +1,17 @@
+k,aderh_metric,expected_direction,spearman_rho,p_value,matches_expected_direction
+5,average_precision,negative,-1.0,0.0,True
+5,relative_contrast,negative,-1.0,0.0,True
+5,roc_auc,negative,-1.0,0.0,True
+5,uncovered_fraction,positive,0.9759000729485332,3.436402807612141e-05,True
+10,average_precision,negative,-1.0,0.0,True
+10,relative_contrast,negative,-1.0,0.0,True
+10,roc_auc,negative,-1.0,0.0,True
+10,uncovered_fraction,positive,0.9759000729485332,3.436402807612141e-05,True
+20,average_precision,negative,-1.0,0.0,True
+20,relative_contrast,negative,-1.0,0.0,True
+20,roc_auc,negative,-1.0,0.0,True
+20,uncovered_fraction,positive,0.9759000729485332,3.436402807612141e-05,True
+30,average_precision,negative,-1.0,0.0,True
+30,relative_contrast,negative,-1.0,0.0,True
+30,roc_auc,negative,-1.0,0.0,True
+30,uncovered_fraction,positive,0.9759000729485332,3.436402807612141e-05,True
