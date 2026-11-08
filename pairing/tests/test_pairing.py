@@ -64,7 +64,7 @@ def test_sklearn_clone(Model):
     assert type(cloned) is Model
 
 
-def test_local_pairing_selects_nearest_neighbor_when_k_is_one(X):
+def test_local_pairing_uses_unique_sampled_partners(X):
     model = LocalADERH(
         n_estimators=10,
         n=18,
@@ -78,30 +78,21 @@ def test_local_pairing_selects_nearest_neighbor_when_k_is_one(X):
         anchors = model._centers[estimator, :model.n]
         partners = model._centers[estimator, model.n:]
 
-        distances = np.sum(
-            (anchors[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2,
-            axis=2
-        )
+        # Every partner must belong to the sampled anchors.
+        for partner in partners:
+            assert any(np.array_equal(partner, anchor) for anchor in anchors)
 
-        # Exclude each anchor itself.
-        for i, anchor in enumerate(anchors):
-            anchor_idx = np.where(
-                np.all(X == anchor, axis=1)
-            )[0][0]
+        # No anchor can be paired with itself.
+        for anchor, partner in zip(anchors, partners):
+            assert not np.array_equal(anchor, partner)
 
-            distances[i, anchor_idx] = np.inf
-
-        nearest_distances = np.min(distances, axis=1)
-
-        partner_distances = np.sum(
-            (anchors - partners) ** 2,
-            axis=1
-        )
-
-        assert np.allclose(
-            partner_distances,
-            nearest_distances
-        )
+        # Every anchor must be selected exactly once as a partner.
+        for anchor in anchors:
+            occurrences = sum(
+                np.array_equal(anchor, partner)
+                for partner in partners
+            )
+            assert occurrences == 1
 
 
 def test_hybrid_alpha_zero_matches_original_centers(X):
@@ -127,7 +118,7 @@ def test_hybrid_alpha_zero_matches_original_centers(X):
     )
 
 
-def test_hybrid_alpha_one_uses_local_partners(X):
+def test_hybrid_alpha_one_uses_unique_sampled_partners(X):
     model = HybridADERH(
         n_estimators=10,
         n=18,
@@ -142,29 +133,58 @@ def test_hybrid_alpha_one_uses_local_partners(X):
         anchors = model._centers[estimator, :model.n]
         partners = model._centers[estimator, model.n:]
 
-        distances = np.sum(
-            (anchors[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2,
-            axis=2
-        )
+        # Every partner must belong to the sampled anchors.
+        for partner in partners:
+            assert any(
+                np.array_equal(partner, anchor)
+                for anchor in anchors
+            )
 
-        for i, anchor in enumerate(anchors):
-            anchor_idx = np.where(
-                np.all(X == anchor, axis=1)
-            )[0][0]
+        # No anchor can be paired with itself.
+        for anchor, partner in zip(anchors, partners):
+            assert not np.array_equal(anchor, partner)
 
-            distances[i, anchor_idx] = np.inf
+        # Every anchor must appear exactly once as a partner.
+        for anchor in anchors:
+            occurrences = sum(
+                np.array_equal(anchor, partner)
+                for partner in partners
+            )
+            assert occurrences == 1
 
-        nearest_distances = np.min(distances, axis=1)
-        partner_distances = np.sum(
-            (anchors - partners) ** 2,
-            axis=1
-        )
+def test_hybrid_alpha_half_selects_half_local_anchors(X, monkeypatch):
+    model = HybridADERH(
+        n_estimators=10,
+        n=18,
+        random_state=42,
+        k_neighbors=1,
+        alpha=0.5
+    )
 
-        assert np.allclose(
-            partner_distances,
-            nearest_distances
-        )
+    captured = {}
+    original_method = model._select_unique_partners
 
+    def capture_local_positions(X, anchor_idx, rnd, local_positions):
+        captured["local_positions"] = np.asarray(local_positions)
+        return original_method(X, anchor_idx, rnd, local_positions)
+
+    monkeypatch.setattr(
+        model,
+        "_select_unique_partners",
+        capture_local_positions
+    )
+
+    anchor_idx = np.arange(model.n)
+    rnd = np.random.RandomState(42)
+
+    model._select_partners(X, anchor_idx, rnd)
+
+    local_positions = captured["local_positions"]
+
+    assert len(local_positions) == 9
+    assert len(np.unique(local_positions)) == 9
+    assert np.all(local_positions >= 0)
+    assert np.all(local_positions < model.n)
 
 def test_hybrid_rejects_invalid_alpha(X):
     model = HybridADERH(alpha=1.5)

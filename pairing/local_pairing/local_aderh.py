@@ -1,3 +1,4 @@
+
 import numpy as np
 
 from pairing.common.base_aderh import BasePairingADERH
@@ -5,8 +6,8 @@ from pairing.common.base_aderh import BasePairingADERH
 
 class LocalADERH(BasePairingADERH):
     """
-    ADERH variant where each anchor is paired with a randomly
-    selected point among its k nearest neighbours.
+    ADERH variant where each anchor prefers a partner
+    among its k nearest sampled anchors.
     """
 
     def __init__(
@@ -27,36 +28,19 @@ class LocalADERH(BasePairingADERH):
         self.k_neighbors = k_neighbors
 
     def _select_partners(self, X, anchor_idx, rnd):
-        n_samples = X.shape[0]
         n_anchors = len(anchor_idx)
 
-        if not 1 <= self.k_neighbors < n_samples:
+        if not 1 <= self.k_neighbors < n_anchors:
             raise ValueError(
-                "k_neighbors must be between 1 and n_samples - 1."
+                "k_neighbors must be between 1 and n_anchors - 1."
             )
 
-        # Calculate squared distances from each anchor to all points.
-        distances = np.sum(
-            (X[anchor_idx, np.newaxis, :] - X[np.newaxis, :, :]) ** 2,
-            axis=2
+        # All anchors use local pairing.
+        local_positions = np.arange(n_anchors)
+
+        return self._select_unique_partners(
+            X,
+            anchor_idx,
+            rnd,
+            local_positions,
         )
-
-        # Exclude each anchor itself.
-        distances[
-            np.arange(n_anchors),
-            anchor_idx
-        ] = np.inf
-
-        # Identify the k nearest neighbours.
-        nearest_indices = np.argsort(
-            distances, axis=1
-        )[:, :self.k_neighbors]
-
-        # Randomly select one of the k nearest neighbours.
-        selected = rnd.randint(
-            0, self.k_neighbors, size=n_anchors
-        )
-
-        return nearest_indices[
-            np.arange(n_anchors), selected
-        ]

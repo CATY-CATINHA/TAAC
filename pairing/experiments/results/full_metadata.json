@@ -1,0 +1,98 @@
+{
+  "artifacts": {
+    "figures": [
+      "pairing\\experiments\\figures\\full_roc_auc.png",
+      "pairing\\experiments\\figures\\full_average_precision.png",
+      "pairing\\experiments\\figures\\full_test_uncovered_fraction.png",
+      "pairing\\experiments\\figures\\full_fit_time_seconds.png",
+      "pairing\\experiments\\figures\\full_relative_contrast.png"
+    ],
+    "raw_results": "pairing\\experiments\\results\\full_raw_results.csv",
+    "summary": "pairing\\experiments\\results\\full_summary.csv"
+  },
+  "created_utc": "2026-11-08T14:48:00.980449+00:00",
+  "dataset": {
+    "anomaly_distribution": "N([4, 4], I)",
+    "contamination": 0.05,
+    "informative_dimensions": 2,
+    "irrelevant_distribution": "independent N(0, 1) for both classes",
+    "n_samples": 2000,
+    "normal_distribution": "N([0, 0], I)"
+  },
+  "dimensions": [
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500
+  ],
+  "mode": "full",
+  "models": {
+    "hybrid": {
+      "class": "HybridADERH",
+      "parameters": {
+        "alpha": 0.5,
+        "contamination": 0.1,
+        "k_neighbors": 5,
+        "n": 18,
+        "n_estimators": 256
+      }
+    },
+    "local": {
+      "class": "LocalADERH",
+      "parameters": {
+        "contamination": 0.1,
+        "k_neighbors": 5,
+        "n": 18,
+        "n_estimators": 256
+      }
+    },
+    "original": {
+      "class": "ADERH",
+      "parameters": {
+        "contamination": 0.1,
+        "n": 18,
+        "n_estimators": 256
+      }
+    }
+  },
+  "packages": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.4.6",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.17.1"
+  },
+  "platform": "Windows-10-10.0.26200-SP0",
+  "preprocessing": "MinMaxScaler fitted on training data only",
+  "python": "3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)]",
+  "relative_contrast": {
+    "population": "normal training observations after scaling",
+    "random_pair_count": 4096,
+    "reference_sample_size_max": 512,
+    "self_distances_excluded": true
+  },
+  "score_direction": "higher decision_function values are more anomalous",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "split": {
+    "method": "StratifiedShuffleSplit",
+    "same_indices_across_dimensions_within_seed": true,
+    "test_fraction": 0.3,
+    "train_fraction": 0.7
+  },
+  "uncovered_score_semantics": "score == 1.0 identifies observations not covered by any hypersphere under the pairing implementation's scoring semantics"
+}

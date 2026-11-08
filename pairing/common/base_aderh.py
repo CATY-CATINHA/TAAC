@@ -2,6 +2,7 @@ import numpy as np
 
 from aderh import ADERH
 from sklearn.utils import check_array, check_random_state
+from scipy.optimize import linear_sum_assignment
 
 
 class BasePairingADERH(ADERH):
@@ -19,6 +20,88 @@ class BasePairingADERH(ADERH):
         Must be implemented by each pairing strategy.
         """
         raise NotImplementedError
+
+    def _select_unique_partners(self, X, anchor_idx, rnd, local_positions):
+        """
+        Select partners while ensuring that:
+        - every partner belongs to the sampled anchors;
+        - no anchor is paired with itself;
+        - every anchor is selected exactly once as a partner.
+
+        Anchors in local_positions prefer their k nearest neighbours.
+        Remaining anchors are paired randomly.
+        """
+
+        n_anchors = len(anchor_idx)
+        local_positions = np.asarray(local_positions, dtype=int)
+
+        # If no anchors use local pairing, preserve random derangement.
+        if len(local_positions) == 0:
+            perm = rnd.choice(n_anchors, n_anchors, replace=False)
+
+            for j in range(n_anchors):
+                if perm[j] == j:
+                    k = (j + 1) % n_anchors
+                    perm[j], perm[k] = perm[k], perm[j]
+
+            return anchor_idx[perm]
+
+        if not 1 <= self.k_neighbors < n_anchors:
+            raise ValueError(
+                "k_neighbors must be between 1 and n_anchors - 1."
+            )
+
+        # Calculate distances only between sampled anchors.
+        anchors = X[anchor_idx]
+
+        distances = np.sum(
+            (anchors[:, np.newaxis, :] - anchors[np.newaxis, :, :]) ** 2,
+            axis=2
+        )
+
+        # An anchor cannot be its own partner.
+        np.fill_diagonal(distances, np.inf)
+
+        # Random costs for anchors using random pairing.
+        random_costs = rnd.random((n_anchors, n_anchors))
+        np.fill_diagonal(random_costs, np.inf)
+
+        # Small random values break distance ties.
+        tie_breakers = rnd.random((n_anchors, n_anchors)) * 1e-12
+
+        k = self.k_neighbors
+
+        while True:
+            costs = random_costs.copy()
+
+            # Restrict local anchors to their k nearest neighbours.
+            for position in local_positions:
+                nearest = np.argsort(distances[position])[:k]
+
+                costs[position, :] = np.inf
+                costs[position, nearest] = (
+                    distances[position, nearest]
+                    + tie_breakers[position, nearest]
+                )
+
+            try:
+                rows, columns = linear_sum_assignment(costs)
+                break
+
+            except ValueError:
+                # If no valid assignment exists, expand the neighbourhood.
+                if k == n_anchors - 1:
+                    raise RuntimeError(
+                        "Could not construct a valid partner assignment."
+                    )
+
+                k += 1
+
+        # Convert the assignment into original dataset indices.
+        partner_positions = np.empty(n_anchors, dtype=int)
+        partner_positions[rows] = columns
+
+        return anchor_idx[partner_positions]
 
     def fit(self, X, y=None):
         """Fit ADERH using the selected pairing strategy."""
@@ -67,8 +150,20 @@ class BasePairingADERH(ADERH):
             )
             partners = X[partner_idx]
 
+            # Recover partner positions within the sampled anchors.
+            anchor_positions = {
+                idx: position
+                for position, idx in enumerate(anchor_idx)
+            }
+
+            partner_positions = np.array([
+                anchor_positions[idx]
+                for idx in partner_idx
+            ])
+
+            # Preserve the original ADERH radius calculation.
             sq_pair_dist = np.sum(
-                (anchors - partners) ** 2,
+                (anchors - X[partner_positions]) ** 2,
                 axis=1
             )
 
