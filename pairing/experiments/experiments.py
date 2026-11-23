@@ -35,12 +35,25 @@ from pairing.local_pairing.local_aderh import LocalADERH
 from pairing.random_pairing.corrected_random_aderh import CorrectedRandomADERH
 
 from .data_generation import DEFAULT_DIMENSIONS, make_nested_datasets
+from .diagnostics import (
+    hypersphere_geometry_diagnostics,
+    neighbourhood_fidelity,
+)
 from .metrics import relative_contrast
 
 
 # Experiment configuration
 SMOKE_DIMENSIONS = (2, 50)
+PHASE1_DIMENSIONS = (2, 20, 50, 100)
+PHASE1_SEEDS = tuple(range(5))
 FULL_SEEDS = tuple(range(10))
+
+PHASE1_MODEL_NAMES = (
+    "original",
+    "corrected_random",
+    "local",
+    "hybrid",
+)
 
 MODEL_CONFIGS = {
     "original": {
@@ -139,6 +152,13 @@ SUMMARY_METRICS = (
     "test_uncovered_fraction",
     "normal_uncovered_fraction",
     "anomaly_uncovered_fraction",
+    "neighbour_fidelity_mean",
+    "pair_distance_median",
+    "radius_median",
+    "radius_center_eccentricity_correlation",
+    "sampled_train_estimator_coverage_mean",
+    "sampled_train_covering_estimator_fraction_mean",
+    "sampled_train_uncovered_fraction",
     "fit_time_seconds",
     "scoring_time_seconds",
 )
@@ -314,7 +334,8 @@ def create_figures(
     for metric, ylabel, title in plots:
         fig, ax = plt.subplots(figsize=(8, 5))
 
-        for model_name in MODEL_CONFIGS:
+        plotted_models = tuple(dict.fromkeys(raw_results["model"]))
+        for model_name in plotted_models:
             model_data = summary[summary["model"] == model_name]
 
             ax.errorbar(
@@ -387,6 +408,10 @@ def run_experiment(
     figures_dir: Path = Path("pairing/experiments/figures/current"),
     reference_sample_size: int = 512,
     random_pair_count: int = 4096,
+    diagnostic_neighbour_k: int = 5,
+    diagnostic_max_points: int = 512,
+    diagnostic_max_estimators: int = 64,
+    model_names: Iterable[str] | None = None,
 ) -> dict[str, Path]:
     """Run all ADERH models on identical experimental configurations."""
 
@@ -395,6 +420,19 @@ def run_experiment(
 
     if not dimensions or not seeds:
         raise ValueError("dimensions and seeds must be non-empty")
+
+    if model_names is None:
+        selected_model_names = tuple(MODEL_CONFIGS)
+    else:
+        selected_model_names = tuple(model_names)
+
+    unknown_models = set(selected_model_names) - set(MODEL_CONFIGS)
+    if unknown_models:
+        raise ValueError(
+            f"unknown model names: {sorted(unknown_models)}"
+        )
+    if not selected_model_names:
+        raise ValueError("at least one model must be selected")
 
     results_dir.mkdir(parents=True, exist_ok=True)
     figures_dir.mkdir(parents=True, exist_ok=True)
@@ -436,8 +474,18 @@ def run_experiment(
                 random_pair_count=random_pair_count,
             )
 
+            # Synthetic-only diagnostic: quantify how many neighbours from the
+            # two informative dimensions survive in the complete ambient
+            # representation. The detector never receives this information.
+            neighbour_diagnostics = neighbourhood_fidelity(
+                X_train_scaled,
+                X_train_scaled[:, :2],
+                k=diagnostic_neighbour_k,
+            )
+
             # Both models receive the same data and random seed.
-            for model_name, config in MODEL_CONFIGS.items():
+            for model_name in selected_model_names:
+                config = MODEL_CONFIGS[model_name]
                 model_class = config["class"]
 
                 params = {
@@ -450,6 +498,14 @@ def run_experiment(
                 fit_started = perf_counter()
                 model.fit(X_train_scaled)
                 fit_time = perf_counter() - fit_started
+
+                geometry_diagnostics = hypersphere_geometry_diagnostics(
+                    model,
+                    X_train_scaled,
+                    random_state=seed,
+                    max_points=diagnostic_max_points,
+                    max_estimators=diagnostic_max_estimators,
+                )
 
                 scoring_started = perf_counter()
                 scores = model.decision_function(X_test_scaled)
@@ -494,6 +550,8 @@ def run_experiment(
                         "MinMaxScaler fit on training split only"
                     ),
                     "score_direction": "higher_is_more_anomalous",
+                    **neighbour_diagnostics,
+                    **geometry_diagnostics,
                     **diagnostics,
                 }
 
@@ -567,14 +625,25 @@ def run_experiment(
             "random_pair_count": random_pair_count,
             "self_distances_excluded": True,
         },
+        "phase2_geometry_diagnostics": {
+            "neighbour_reference": (
+                "first two informative dimensions of the controlled "
+                "synthetic dataset; diagnostic only, never model input"
+            ),
+            "neighbour_k": diagnostic_neighbour_k,
+            "coverage_population": "scaled training observations",
+            "coverage_max_points": diagnostic_max_points,
+            "coverage_max_estimators": diagnostic_max_estimators,
+            "coverage_sampling": "seeded without replacement",
+        },
         "models": {
             name: {
-                "class": config["class"].__name__,
-                "parameters": config["parameters"],
+                "class": MODEL_CONFIGS[name]["class"].__name__,
+                "parameters": MODEL_CONFIGS[name]["parameters"],
             }
-            for name, config in MODEL_CONFIGS.items()
+            for name in selected_model_names
         },
-        "model_count": len(MODEL_CONFIGS),
+        "model_count": len(selected_model_names),
         "implementation_note": (
             "corrected_random and all pairing variants use actual partner "
             "distances and center-aligned squared radii; original preserves "
@@ -610,8 +679,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "mode",
-        choices=("smoke", "full"),
-        help="smoke: dimensions 2 and 50, one seed; full: all dimensions, 10 seeds",
+        choices=("smoke", "phase1", "full"),
+        help=(
+            "smoke: dimensions 2 and 50, one seed; phase1: dimensions "
+            "2, 20, 50 and 100, five seeds and non-LID controls; full: "
+            "all dimensions, models and 10 seeds"
+        ),
     )
     parser.add_argument(
         "--seed",
@@ -631,6 +704,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--reference-sample-size", type=int, default=512)
     parser.add_argument("--random-pair-count", type=int, default=4096)
+    parser.add_argument("--diagnostic-neighbour-k", type=int, default=5)
+    parser.add_argument("--diagnostic-max-points", type=int, default=512)
+    parser.add_argument("--diagnostic-max-estimators", type=int, default=64)
 
     return parser
 
@@ -641,9 +717,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.mode == "smoke":
         dimensions = SMOKE_DIMENSIONS
         seeds = (args.seed,)
+        model_names = None
+    elif args.mode == "phase1":
+        dimensions = PHASE1_DIMENSIONS
+        seeds = PHASE1_SEEDS
+        model_names = PHASE1_MODEL_NAMES
     else:
         dimensions = DEFAULT_DIMENSIONS
         seeds = FULL_SEEDS
+        model_names = None
 
     artifacts = run_experiment(
         dimensions=dimensions,
@@ -653,6 +735,10 @@ def main(argv: list[str] | None = None) -> int:
         figures_dir=args.figures_dir,
         reference_sample_size=args.reference_sample_size,
         random_pair_count=args.random_pair_count,
+        diagnostic_neighbour_k=args.diagnostic_neighbour_k,
+        diagnostic_max_points=args.diagnostic_max_points,
+        diagnostic_max_estimators=args.diagnostic_max_estimators,
+        model_names=model_names,
     )
 
     print(

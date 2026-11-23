@@ -30,6 +30,10 @@ for provenance. They are not results for the current implementation; see
 The current experiment contains an explicit `corrected_random` control to
 separate implementation corrections from the effect of local pairing.
 
+The next research phase, including radius calibration, stochastic locality,
+LID-controlled temperature, subspace alternatives and pre-registered success
+criteria, is documented in [`fase2.md`](fase2.md).
+
 ---
 
 ## Proposed Method
