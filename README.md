@@ -30,12 +30,19 @@ for provenance. They are not results for the current implementation; see
 The current experiment contains an explicit `corrected_random` control to
 separate implementation corrections from the effect of local pairing.
 Phase 2 also contains radius-shuffling and training-only coverage-calibration
-controls; these recover much of the corrected-random performance gap but have
-not yet improved consistently on the original ADERH baseline.
+controls; these recover much of the corrected-random performance gap but do
+not improve consistently on the original ADERH baseline.
 
-The next research phase, including radius calibration, stochastic locality,
-LID-controlled temperature, subspace alternatives and pre-registered success
-criteria, is documented in [`fase2.md`](fase2.md).
+Phase 2 now also contains a frozen ten-feature random-subspace candidate. It
+is the first current implementation to improve materially on the baseline in
+high ambient dimensions: held-out seeds confirm the strongest gain at 100D,
+and the focused comparison extends the improvement to 200D and 500D. The
+method restores coverage but is not yet LID-adaptive, so the next research
+question is whether LID can guide subspace scale or selection without losing
+that improvement.
+
+The development/validation split, exact results, remaining alternatives and
+pre-registered success criteria are documented in [`fase2.md`](fase2.md).
 
 ---
 

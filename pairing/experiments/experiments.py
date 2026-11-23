@@ -38,6 +38,9 @@ from pairing.random_pairing.radius_controls import (
     ShuffledCoverageCalibratedRandomADERH,
     ShuffledRadiusRandomADERH,
 )
+from pairing.subspace_pairing.random_subspace_aderh import (
+    RandomSubspaceADERH,
+)
 
 from .data_generation import DEFAULT_DIMENSIONS, make_nested_datasets
 from .diagnostics import (
@@ -51,6 +54,7 @@ from .metrics import relative_contrast
 SMOKE_DIMENSIONS = (2, 50)
 PHASE1_DIMENSIONS = (2, 20, 50, 100)
 PHASE1_SEEDS = tuple(range(5))
+SUBSPACE_VALIDATION_SEEDS = tuple(range(5, 10))
 FULL_SEEDS = tuple(range(10))
 
 PHASE1_MODEL_NAMES = (
@@ -59,8 +63,21 @@ PHASE1_MODEL_NAMES = (
     "shuffled_radius",
     "coverage_calibrated_random",
     "shuffled_coverage_calibrated",
+    "random_subspace_10",
+    "random_subspace_10_shuffled",
     "local",
     "hybrid",
+)
+
+SUBSPACE_VALIDATION_MODEL_NAMES = (
+    "original",
+    "random_subspace_10",
+    "random_subspace_10_shuffled",
+)
+
+SUBSPACE_FULL_MODEL_NAMES = (
+    "original",
+    "random_subspace_10_shuffled",
 )
 
 MODEL_CONFIGS = {
@@ -106,6 +123,26 @@ MODEL_CONFIGS = {
             "contamination": 0.1,
             "calibration_max_points": 256,
             "calibration_max_estimators": 64,
+        },
+    },
+    "random_subspace_10": {
+        "class": RandomSubspaceADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "max_features": 10,
+            "shuffle_radii": False,
+        },
+    },
+    "random_subspace_10_shuffled": {
+        "class": RandomSubspaceADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "max_features": 10,
+            "shuffle_radii": True,
         },
     },
     "local": {
@@ -189,6 +226,10 @@ SUMMARY_METRICS = (
     "normal_uncovered_fraction",
     "anomaly_uncovered_fraction",
     "neighbour_fidelity_mean",
+    "effective_feature_count",
+    "informative_feature_any_fraction",
+    "informative_feature_both_fraction",
+    "informative_feature_count_mean",
     "pair_distance_median",
     "radius_median",
     "radius_center_eccentricity_correlation",
@@ -552,7 +593,7 @@ def run_experiment(
                 scoring_time = perf_counter() - scoring_started
 
                 diagnostics = score_diagnostics(scores, y_test)
-                
+
                 row = {
                     "model": model_name,
                     "dimensionality": dimensionality,
@@ -699,6 +740,10 @@ def run_experiment(
                 "first two informative dimensions of the controlled "
                 "synthetic dataset; diagnostic only, never model input"
             ),
+            "subspace_informative_feature_reference": (
+                "feature indices 0 and 1 of the controlled synthetic "
+                "dataset; diagnostic only, never model input"
+            ),
             "neighbour_k": diagnostic_neighbour_k,
             "coverage_population": "scaled training observations",
             "coverage_max_points": diagnostic_max_points,
@@ -716,8 +761,9 @@ def run_experiment(
         "implementation_note": (
             "corrected_random and all pairing variants use actual partner "
             "distances; radius-control variants explicitly isolate radius "
-            "reassignment and training-only coverage calibration; original "
-            "preserves ADERH 1.0.0 behavior"
+            "reassignment and training-only coverage calibration; subspace "
+            "variants calculate centers, radii and scores in per-estimator "
+            "feature subsets; original preserves ADERH 1.0.0 behavior"
         ),
         "score_direction": "higher decision_function values are more anomalous",
         "uncovered_score_semantics": (
@@ -749,11 +795,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "mode",
-        choices=("smoke", "phase1", "full"),
+        choices=(
+            "smoke",
+            "phase1",
+            "subspace-validation",
+            "subspace-full",
+            "full",
+        ),
         help=(
             "smoke: dimensions 2 and 50, one seed; phase1: dimensions "
-            "2, 20, 50 and 100, five seeds and non-LID controls; full: "
-            "all dimensions, models and 10 seeds"
+            "2, 20, 50 and 100, development seeds 0-4 and non-LID "
+            "controls; subspace-validation: the frozen subspace candidates "
+            "on held-out seeds 5-9; subspace-full: the frozen shuffled "
+            "candidate on all dimensions and 10 seeds; full: all dimensions, "
+            "models and 10 seeds"
         ),
     )
     parser.add_argument(
@@ -792,6 +847,14 @@ def main(argv: list[str] | None = None) -> int:
         dimensions = PHASE1_DIMENSIONS
         seeds = PHASE1_SEEDS
         model_names = PHASE1_MODEL_NAMES
+    elif args.mode == "subspace-validation":
+        dimensions = PHASE1_DIMENSIONS
+        seeds = SUBSPACE_VALIDATION_SEEDS
+        model_names = SUBSPACE_VALIDATION_MODEL_NAMES
+    elif args.mode == "subspace-full":
+        dimensions = DEFAULT_DIMENSIONS
+        seeds = FULL_SEEDS
+        model_names = SUBSPACE_FULL_MODEL_NAMES
     else:
         dimensions = DEFAULT_DIMENSIONS
         seeds = FULL_SEEDS

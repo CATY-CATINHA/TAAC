@@ -37,6 +37,7 @@ packages = [
     "pairing.lid_adaptive_pairing",
     "pairing.local_pairing",
     "pairing.random_pairing",
+    "pairing.subspace_pairing",
 ]
 
 [tool.setuptools.package-dir]

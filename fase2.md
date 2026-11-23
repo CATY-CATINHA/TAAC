@@ -379,3 +379,149 @@ o Original de forma consistente entre seeds.
   recupere vizinhos informativos.
 - Só depois de existir geometria local fiável deverá a LID controlar localidade
   ou temperatura de pairing.
+
+## Segundo passo — ADERH em subespaços aleatórios
+
+Foi implementado `RandomSubspaceADERH`. Cada um dos 256 estimadores:
+
+1. escolhe anchors e parceiros através do Corrected Random;
+2. amostra, sem reposição, no máximo dez features;
+3. calcula centros, distâncias, raios, cobertura e scores apenas nesse
+   subespaço;
+4. na variante `random_subspace_10_shuffled`, mantém a distribuição de raios
+   do estimador, mas reassocia-os aleatoriamente entre os pares.
+
+Quando o dataset tem dez ou menos features, são usadas todas. Acima de 10D, a
+dimensão efetiva de cada estimador permanece fixa em dez. O modelo não conhece
+quais são as duas features informativas do gerador sintético e não usa labels
+ou métricas de teste.
+
+O valor `max_features=10` e a variante com reassociação de raios foram
+escolhidos exclusivamente nas seeds de desenvolvimento `0–4`. Depois dessa
+escolha, a configuração foi congelada e avaliada nas seeds `5–9`.
+
+### Resultado de desenvolvimento — seeds 0–4
+
+Na comparação de desenvolvimento, `random_subspace_10_shuffled` obteve os
+seguintes deltas médios relativamente ao Original:
+
+| Dimensionalidade | Delta ROC-AUC | Delta AP | Vitórias AP |
+|---:|---:|---:|---:|
+| 2D | -0.0005 | -0.0116 | 1/5 |
+| 20D | +0.0005 | +0.0022 | 3/5 |
+| 50D | +0.0151 | +0.0552 | 4/5 |
+| 100D | +0.0892 | +0.1465 | 5/5 |
+
+Este resultado serviu para selecionar a configuração, não para a validar.
+
+### Validação separada — seeds 5–9
+
+Após congelar a configuração, foi executado o modo:
+
+```bash
+python -m pairing.experiments.experiments subspace-validation
+```
+
+| Dimensão | ROC Original | ROC Subspace | Delta ROC | AP Original | AP Subspace | Delta AP |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2D | 0.9991 | 0.9990 | -0.0001 | 0.9782 | 0.9761 | -0.0021 |
+| 20D | 0.9463 | 0.9462 | -0.0002 | 0.5883 | 0.5688 | -0.0195 |
+| 50D | 0.8702 | 0.8636 | -0.0066 | 0.2727 | 0.3074 | +0.0346 |
+| 100D | 0.6828 | 0.8056 | +0.1227 | 0.0795 | 0.1957 | +0.1162 |
+
+Em 100D, a melhoria ocorreu nas cinco seeds tanto em ROC-AUC como em AP. Em
+50D, a AP melhorou em quatro das cinco seeds, embora a ROC-AUC média tenha
+descido ligeiramente. Em 20D existe uma perda de AP que terá de ser considerada
+num mecanismo adaptativo ou num ensemble de segurança. Cinco seeds dão pouca
+potência a um teste estatístico isolado; a consistência e a magnitude em 100D
+são a evidência principal desta validação.
+
+### Comparação focada nas oito dimensionalidades
+
+O candidato congelado foi depois comparado com o Original nas oito dimensões e
+nas dez seeds através de `subspace-full`. Esta tabela combina desenvolvimento e
+validação para caracterizar a curva completa; por isso, não deve ser descrita
+como uma avaliação totalmente held-out.
+
+| Dimensão | ROC Original | ROC Subspace | Delta ROC | AP Original | AP Subspace | Delta AP |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2D | 0.9993 | 0.9990 | -0.0003 | 0.9833 | 0.9765 | -0.0068 |
+| 5D | 0.9945 | 0.9947 | +0.0002 | 0.8958 | 0.8949 | -0.0010 |
+| 10D | 0.9839 | 0.9832 | -0.0007 | 0.7978 | 0.7912 | -0.0066 |
+| 20D | 0.9506 | 0.9508 | +0.0002 | 0.6061 | 0.5975 | -0.0086 |
+| 50D | 0.8780 | 0.8822 | +0.0042 | 0.3023 | 0.3472 | +0.0449 |
+| 100D | 0.6990 | 0.8050 | +0.1060 | 0.0840 | 0.2153 | +0.1313 |
+| 200D | 0.5018 | 0.6902 | +0.1884 | 0.0502 | 0.1277 | +0.0776 |
+| 500D | 0.5000 | 0.6097 | +0.1097 | 0.0500 | 0.0990 | +0.0490 |
+
+Em 100D e 200D, o candidato venceu nas dez seeds em ambas as métricas. Em
+500D, venceu nas dez seeds em AP e em nove das dez em ROC-AUC. Testes de
+Wilcoxon emparelhados nas dez seeds dão `p=0.0020` para ambas as métricas em
+100D e 200D; em 500D dão `p=0.0039` para ROC-AUC e `p=0.0020` para AP. Estes
+valores são exploratórios, pois cinco das dez seeds participaram na seleção do
+candidato. Em 50D, a melhoria média de AP não é ainda estatisticamente estável
+(`p=0.3223`).
+
+### Mecanismo observado
+
+O ganho não resulta de melhorar os vizinhos euclidianos no espaço completo.
+Resulta de deixar de calcular cada distância em todas as features de ruído:
+
+- cada estimador vê apenas dez features, limitando a concentração de
+  distâncias;
+- diferentes estimadores amostram vistas diferentes, pelo que parte do
+  ensemble contém uma ou ambas as features informativas;
+- a reassociação dos raios reduz o acoplamento entre raio e excentricidade do
+  centro;
+- a cobertura exata do teste passa a ser total nas oito dimensionalidades,
+  enquanto o Original deixa 47.25% dos pontos sem cobertura em 100D, 99.67%
+  em 200D e 100% em 500D;
+- a cobertura média amostrada de treino por estimador do candidato mantém-se
+  perto de 0.91 em alta dimensão.
+
+Este mecanismo é verificável, mas tem uma limitação importante: subespaços
+aleatórios são uma técnica conhecida. O resultado demonstra uma solução
+eficaz para o failure mode do ADERH, não estabelece por si só a novidade da
+contribuição. Também falta validação em datasets reais, onde não se conhecem as
+features informativas.
+
+### Avaliação face aos critérios de sucesso
+
+1. **50D e 100D:** AP melhora em ambos; em 100D melhoram claramente as duas
+   métricas. Em 50D, a evidência é positiva para AP, mas ainda instável.
+2. **Consistência:** confirmada em 100D e nos regimes 200D–500D; parcial em
+   50D.
+3. **Baixa dimensão:** as perdas entre 2D e 20D são pequenas em média, mas a
+   perda de AP em 20D nas seeds held-out merece mitigação.
+4. **Sem leakage no ajuste:** o detector e os raios são ajustados sem labels.
+   A escolha entre os candidatos usou as métricas das seeds de desenvolvimento
+   `0–4`, mas não as seeds held-out `5–9`. Uma política final estritamente não
+   supervisionada ainda deverá fixar a configuração a priori ou escolhê-la por
+   um diagnóstico calculado apenas no treino.
+5. **Cobertura e scores:** cumprido; deixa de haver o colapso para scores todos
+   iguais a um.
+6. **Baselines:** supera claramente o Original em alta dimensão e, por
+   consequência, também o Corrected Random nesses regimes.
+7. **Mecanismo:** suportado pelos diagnósticos de dimensão efetiva, cobertura e
+   associação centro–raio.
+8. **Custo:** comparável e, em 500D, inferior ao Original porque cada estimador
+   calcula distâncias em apenas dez features.
+
+## Próximo passo recomendado
+
+O próximo desenvolvimento deve partir deste candidato funcional, em vez de
+voltar ao kNN no espaço completo. A hipótese seguinte é usar LID para controlar
+a dimensão ou a combinação dos subespaços:
+
+1. manter `random_subspace_10_shuffled` como baseline positiva congelada;
+2. estimar um sinal global de dimensionalidade apenas no treino;
+3. comparar uma pequena política pré-definida de dimensões de subespaço, sem
+   escolher valores por AP/ROC no teste;
+4. avaliar se a LID acrescenta valor relativamente ao subespaço fixo;
+5. testar um fallback para o Original nas dimensões em que a geometria global
+   ainda é fiável, reduzindo a pequena perda em 2D–20D;
+6. só promover a proposta final depois de validar também em dados reais.
+
+Esta sequência preserva a pergunta científica inicial: a LID não precisa de
+ser forçada a escolher parceiros locais; pode indicar quanta dimensionalidade
+cada membro do ensemble deve observar.

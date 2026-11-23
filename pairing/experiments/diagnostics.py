@@ -130,8 +130,20 @@ def hypersphere_geometry_diagnostics(
         raise ValueError("invalid fitted center or radius shape")
     if centers.shape[:2] != squared_radii.shape:
         raise ValueError("centers and radii must be aligned")
-    if centers.shape[2] != X.shape[1]:
-        raise ValueError("model and X must have the same feature count")
+
+    feature_indices = getattr(model, "_feature_indices", None)
+    if feature_indices is None:
+        if centers.shape[2] != X.shape[1]:
+            raise ValueError("model and X must have the same feature count")
+    else:
+        feature_indices = np.asarray(feature_indices, dtype=int)
+        if feature_indices.shape != (
+            centers.shape[0],
+            centers.shape[2],
+        ):
+            raise ValueError("invalid per-estimator feature-index shape")
+        if np.any((feature_indices < 0) | (feature_indices >= X.shape[1])):
+            raise ValueError("feature indices are out of range")
     if centers.shape[1] % 2 != 0:
         raise ValueError("the center count must contain two blocks")
     if np.any(squared_radii < 0) or not np.all(np.isfinite(squared_radii)):
@@ -155,11 +167,26 @@ def hypersphere_geometry_diagnostics(
         where=valid_scale,
     )
 
-    centroid = np.mean(X, axis=0)
-    center_eccentricity = np.linalg.norm(
-        centers - centroid[np.newaxis, np.newaxis, :],
-        axis=2,
-    )
+    if feature_indices is None:
+        centroid = np.mean(X, axis=0)
+        center_eccentricity = np.linalg.norm(
+            centers - centroid[np.newaxis, np.newaxis, :],
+            axis=2,
+        )
+    else:
+        center_eccentricity = np.empty(
+            (n_estimators, n_centers),
+            dtype=float,
+        )
+        for estimator_index in range(n_estimators):
+            projected_centroid = np.mean(
+                X[:, feature_indices[estimator_index]],
+                axis=0,
+            )
+            center_eccentricity[estimator_index] = np.linalg.norm(
+                centers[estimator_index] - projected_centroid,
+                axis=1,
+            )
 
     rng = np.random.default_rng(random_state)
     point_count = min(max_points, X.shape[0])
@@ -177,8 +204,14 @@ def hypersphere_geometry_diagnostics(
 
     for output_index, estimator_index in enumerate(estimator_indices):
         estimator_centers = centers[estimator_index]
+        if feature_indices is None:
+            estimator_points = sampled_points
+        else:
+            estimator_points = sampled_points[
+                :, feature_indices[estimator_index]
+            ]
         differences = (
-            sampled_points[:, np.newaxis, :]
+            estimator_points[:, np.newaxis, :]
             - estimator_centers[np.newaxis, :, :]
         )
         point_center_distances = np.einsum(
@@ -201,9 +234,35 @@ def hypersphere_geometry_diagnostics(
         else float("nan")
     )
 
+    if feature_indices is None:
+        effective_feature_count = X.shape[1]
+        informative_feature_any_fraction = 1.0
+        informative_feature_both_fraction = 1.0
+        informative_feature_count_mean = float(min(2, X.shape[1]))
+    else:
+        informative_counts = np.sum(feature_indices < 2, axis=1)
+        effective_feature_count = feature_indices.shape[1]
+        informative_feature_any_fraction = float(
+            np.mean(informative_counts >= 1)
+        )
+        informative_feature_both_fraction = float(
+            np.mean(informative_counts == 2)
+        )
+        informative_feature_count_mean = float(
+            np.mean(informative_counts)
+        )
+
     return {
         "geometry_point_sample_size": int(point_count),
         "geometry_estimator_sample_size": int(estimator_count),
+        "effective_feature_count": int(effective_feature_count),
+        "informative_feature_any_fraction": (
+            informative_feature_any_fraction
+        ),
+        "informative_feature_both_fraction": (
+            informative_feature_both_fraction
+        ),
+        "informative_feature_count_mean": informative_feature_count_mean,
         "pair_distance_mean": float(np.mean(pair_distances)),
         "pair_distance_median": float(np.median(pair_distances)),
         "pair_distance_q10": float(np.quantile(pair_distances, 0.10)),
