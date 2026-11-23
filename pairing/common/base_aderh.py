@@ -28,6 +28,24 @@ class BasePairingADERH(ADERH):
         """
         raise NotImplementedError
 
+    def _transform_pair_radii(
+        self,
+        pair_radii,
+        *,
+        X,
+        anchor_idx,
+        partner_idx,
+        rnd,
+    ):
+        """Transform one estimator's squared pair radii before storage."""
+
+        return pair_radii
+
+    def _postprocess_geometry(self, X):
+        """Optionally modify fitted centers/radii before score calculation."""
+
+        return None
+
     def _select_unique_partners(self, X, anchor_idx, rnd, local_positions):
         """
         Select partners while ensuring that:
@@ -190,12 +208,32 @@ class BasePairingADERH(ADERH):
             # Match the radius ordering to the center ordering.
             # Keep division by 2 to match the original ADERH radius scale.
             pair_radii = sq_pair_dist / 2
+            pair_radii = np.asarray(
+                self._transform_pair_radii(
+                    pair_radii,
+                    X=X,
+                    anchor_idx=anchor_idx,
+                    partner_idx=partner_idx,
+                    rnd=rnd,
+                ),
+                dtype=float,
+            )
+
+            if pair_radii.shape != (n_anchors,):
+                raise RuntimeError(
+                    "Radius policy returned an invalid radius shape."
+                )
+            if np.any(pair_radii < 0) or not np.all(np.isfinite(pair_radii)):
+                raise RuntimeError(
+                    "Radius policy returned invalid squared radii."
+                )
 
             self._sq_radii[i] = np.concatenate(
                 [pair_radii, pair_radii]
             )
 
         self.n_features_in_ = n_features
+        self._postprocess_geometry(X)
 
         # Reuse the original ADERH scoring mechanism.
         self.decision_scores_ = self._raw_scores(X)

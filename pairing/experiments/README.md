@@ -1,16 +1,19 @@
 # Pairing comparison experiments
 
-The pipeline compares eight configurations on identical nested datasets,
+The pipeline compares eleven configurations on identical nested datasets,
 train/test splits, preprocessing and random seeds:
 
 1. official ADERH;
 2. corrected random pairing;
-3. local pairing;
-4. fixed hybrid pairing;
-5. rank LID-adaptive, high LID local;
-6. rank LID-adaptive, high LID random;
-7. continuous LID-adaptive, high LID local;
-8. continuous LID-adaptive, high LID random.
+3. corrected random centers with shuffled radii;
+4. corrected random with training-only coverage calibration;
+5. shuffled radii with training-only coverage calibration;
+6. local pairing;
+7. fixed hybrid pairing;
+8. rank LID-adaptive, high LID local;
+9. rank LID-adaptive, high LID random;
+10. continuous LID-adaptive, high LID local;
+11. continuous LID-adaptive, high LID random.
 
 The corrected-random configuration is the control for the actual-partner
 distance and radius-order corrections shared by all experimental variants.
@@ -47,10 +50,10 @@ python -m pairing.experiments.experiments full
 ```
 
 `phase1` is the bounded development comparison defined in `fase2.md`: it runs
-dimensions `2, 20, 50, 100`, seeds `0–4`, and only the non-LID controls
-`original`, `corrected_random`, `local`, and `hybrid`. New candidate pairing
-and radius policies will be added to this mode before they are admitted to the
-full experiment.
+dimensions `2, 20, 50, 100`, seeds `0–4`, and only the non-LID controls:
+`original`, `corrected_random`, the three radius controls, `local`, and
+`hybrid`. Candidate policies are admitted to the full experiment only after
+this bounded comparison has been reviewed.
 
 Diagnostic sampling can be changed with
 `--diagnostic-neighbour-k`, `--diagnostic-max-points`, and

@@ -9,6 +9,12 @@ and recalibrates the continuous LID strategy.
 
 No full result snapshot for this implementation has been validated yet.
 
+Phase 2 development runs additionally evaluate radius reassignment and
+training-only coverage calibration. Their current five-seed results are
+documented in `fase2.md` as bounded diagnostic evidence. They are not a full
+result snapshot and do not yet demonstrate an improvement over the original
+ADERH baseline.
+
 ## Historical snapshots
 
 The tracked `full_*`, `smoke_*`, and `rank_based/full_*` artifacts were produced

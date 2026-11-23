@@ -18,6 +18,9 @@ The comparison includes:
 |---|---|
 | `original` | Unmodified ADERH 1.0.0 |
 | `corrected_random` | Random pairing with actual pair distances and aligned radii |
+| `shuffled_radius` | Corrected random centers with the same radii reassigned between pairs |
+| `coverage_calibrated_random` | Corrected random radii scaled to original training coverage |
+| `shuffled_coverage_calibrated` | Radius reassignment followed by training-only coverage calibration |
 | `local` | All anchors prefer nearby sampled anchors |
 | `hybrid` | A fixed fraction of anchors prefer local partners |
 | `lid_adaptive_*` | LID determines which anchors prefer local partners |
@@ -30,3 +33,7 @@ the exact policies and execution instructions.
 
 The corrected-random control is documented in
 [`random_pairing/README.md`](random_pairing/README.md).
+
+The Phase 2 radius controls are also documented there. They use no test labels
+and are intended to isolate center/radius effects before introducing another
+adaptive pairing policy.

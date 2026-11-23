@@ -324,3 +324,58 @@ A primeira nova variante deverá combinar:
 Subespaços passam a ter prioridade elevada para os regimes em que se pretende
 recuperar localidade genuína, porque a informação dos dois eixos relevantes
 está diluída pelas features de ruído no espaço completo.
+
+## Primeiro controlo de raio implementado
+
+Foram implementadas três variantes sem LID e sem acesso a labels:
+
+1. `shuffled_radius`: mantém centros e distribuição de raios do Corrected
+   Random, mas reassocia aleatoriamente os raios entre pares;
+2. `coverage_calibrated_random`: mantém o alinhamento correto e aplica o menor
+   multiplicador de raio quadrático `gamma >= 1` que atinge a cobertura média
+   de treino do ADERH original;
+3. `shuffled_coverage_calibrated`: combina reassociação e calibração.
+
+A calibração usa amostras seeded de pontos e estimadores de treino. Não usa
+labels, scores de teste, ROC-AUC ou Average Precision. `gamma` nunca é inferior
+a um, para que uma geometria corrigida que já cumpra o alvo não seja
+encolhida.
+
+### Resultado limitado — cinco seeds
+
+Average Precision média:
+
+| Modelo | 2D | 20D | 50D | 100D |
+|---|---:|---:|---:|---:|
+| Original | 0.9885 | 0.6239 | 0.3319 | 0.0885 |
+| Corrected Random | 0.7650 | 0.5029 | 0.1960 | 0.0601 |
+| Shuffled Radius | 0.9738 | 0.6056 | 0.2629 | 0.0822 |
+| Coverage Calibrated | 0.8169 | 0.5438 | 0.2589 | 0.0808 |
+| Shuffled + Calibrated | 0.9882 | 0.6189 | 0.2763 | 0.0847 |
+
+Diferença média de AP da melhor combinação relativamente ao Original:
+
+| Dimensionalidade | Delta AP |
+|---:|---:|
+| 2D | -0.0003 |
+| 20D | -0.0050 |
+| 50D | -0.0556 |
+| 100D | -0.0038 |
+
+A reassociação dos raios recupera grande parte do desempenho perdido pelo
+Corrected Random, confirmando que a associação centro–raio é um mecanismo
+importante. Igualar a cobertura média de treino também recupera desempenho,
+mas não é suficiente para superar a baseline. Nenhuma das três variantes vence
+o Original de forma consistente entre seeds.
+
+### Decisão após o controlo
+
+- Manter `shuffled_radius` e `shuffled_coverage_calibrated` como ablações.
+- Não continuar a procurar `gamma` através dos resultados de teste.
+- Uma distribuição multiescala por estimador continua a ser uma experiência
+  admissível, desde que seja definida através de cobertura de treino.
+- A principal direção para obter melhoria passa a ser alterar o espaço onde a
+  geometria é calculada: subespaços de features ou outra representação que
+  recupere vizinhos informativos.
+- Só depois de existir geometria local fiável deverá a LID controlar localidade
+  ou temperatura de pairing.

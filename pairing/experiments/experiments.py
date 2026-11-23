@@ -33,6 +33,11 @@ from pairing.hybrid_pairing.hybrid_aderh import HybridADERH
 from pairing.lid_adaptive_pairing.lid_adaptive_aderh import LIDAdaptiveADERH
 from pairing.local_pairing.local_aderh import LocalADERH
 from pairing.random_pairing.corrected_random_aderh import CorrectedRandomADERH
+from pairing.random_pairing.radius_controls import (
+    CoverageCalibratedRandomADERH,
+    ShuffledCoverageCalibratedRandomADERH,
+    ShuffledRadiusRandomADERH,
+)
 
 from .data_generation import DEFAULT_DIMENSIONS, make_nested_datasets
 from .diagnostics import (
@@ -51,6 +56,9 @@ FULL_SEEDS = tuple(range(10))
 PHASE1_MODEL_NAMES = (
     "original",
     "corrected_random",
+    "shuffled_radius",
+    "coverage_calibrated_random",
+    "shuffled_coverage_calibrated",
     "local",
     "hybrid",
 )
@@ -70,6 +78,34 @@ MODEL_CONFIGS = {
             "n_estimators": 256,
             "n": 18,
             "contamination": 0.1,
+        },
+    },
+    "shuffled_radius": {
+        "class": ShuffledRadiusRandomADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+        },
+    },
+    "coverage_calibrated_random": {
+        "class": CoverageCalibratedRandomADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "calibration_max_points": 256,
+            "calibration_max_estimators": 64,
+        },
+    },
+    "shuffled_coverage_calibrated": {
+        "class": ShuffledCoverageCalibratedRandomADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+            "calibration_max_points": 256,
+            "calibration_max_estimators": 64,
         },
     },
     "local": {
@@ -159,6 +195,10 @@ SUMMARY_METRICS = (
     "sampled_train_estimator_coverage_mean",
     "sampled_train_covering_estimator_fraction_mean",
     "sampled_train_uncovered_fraction",
+    "radius_scale_gamma",
+    "calibration_target_coverage",
+    "calibration_base_coverage",
+    "calibration_achieved_coverage",
     "fit_time_seconds",
     "scoring_time_seconds",
 )
@@ -542,6 +582,35 @@ def run_experiment(
                     "model_n": int(params["n"]),
                     "model_contamination": float(params["contamination"]),
                     "model_random_state": int(params["random_state"]),
+                    "radius_scale_gamma": float(
+                        getattr(model, "radius_scale_gamma_", np.nan)
+                    ),
+                    "calibration_target_coverage": float(
+                        getattr(
+                            model,
+                            "calibration_target_coverage_",
+                            np.nan,
+                        )
+                    ),
+                    "calibration_base_coverage": float(
+                        getattr(
+                            model,
+                            "calibration_base_coverage_",
+                            np.nan,
+                        )
+                    ),
+                    "calibration_achieved_coverage": float(
+                        getattr(
+                            model,
+                            "calibration_achieved_coverage_",
+                            np.nan,
+                        )
+                    ),
+                    "calibration_scale_floor_applied": getattr(
+                        model,
+                        "calibration_scale_floor_applied_",
+                        None,
+                    ),
                     "model_hyperparameters": json.dumps(
                         params,
                         sort_keys=True,
@@ -646,8 +715,9 @@ def run_experiment(
         "model_count": len(selected_model_names),
         "implementation_note": (
             "corrected_random and all pairing variants use actual partner "
-            "distances and center-aligned squared radii; original preserves "
-            "ADERH 1.0.0 behavior"
+            "distances; radius-control variants explicitly isolate radius "
+            "reassignment and training-only coverage calibration; original "
+            "preserves ADERH 1.0.0 behavior"
         ),
         "score_direction": "higher decision_function values are more anomalous",
         "uncovered_score_semantics": (

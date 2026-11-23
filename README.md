@@ -29,6 +29,9 @@ for provenance. They are not results for the current implementation; see
 
 The current experiment contains an explicit `corrected_random` control to
 separate implementation corrections from the effect of local pairing.
+Phase 2 also contains radius-shuffling and training-only coverage-calibration
+controls; these recover much of the corrected-random performance gap but have
+not yet improved consistently on the original ADERH baseline.
 
 The next research phase, including radius calibration, stochastic locality,
 LID-controlled temperature, subspace alternatives and pre-registered success
