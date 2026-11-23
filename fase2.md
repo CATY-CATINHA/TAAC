@@ -548,3 +548,18 @@ a dimensão ou a combinação dos subespaços:
 Esta sequência preserva a pergunta científica inicial: a LID não precisa de
 ser forçada a escolher parceiros locais; pode indicar quanta dimensionalidade
 cada membro do ensemble deve observar.
+
+## Reteste estatístico do pre-subspace em dados sintéticos e reais
+
+O nome **pre-subspace** identifica a configuração fixa
+`random_subspace_10_shuffled`, anterior à adaptação por LID. Nas 20 novas
+seeds (10–29), a vantagem em AP e ROC-AUC manteve-se em 100D, 200D e 500D
+após correção de Holm. A 50D a AP aumentou 0,0546 em média e a 5D caiu
+0,0174. A perda a 5D foi consistente após correção.
+
+Nos onze datasets ADBench retirados da Tabela 6 do artigo, a média dos
+deltas por dataset foi +0,0096 em AP e −0,0109 em ROC-AUC. Ambos os IC de
+95% incluem zero. A vantagem sintética em geometria dominada por ruído
+generalizou apenas a alguns datasets do painel. Estes resultados passam
+a servir de referência para avaliar o valor acrescentado da LID.
+[Protocolo, resultados e verificação da baseline publicada](pairing/experiments/results/pre_subspace/README.md).

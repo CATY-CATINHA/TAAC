@@ -35,6 +35,11 @@ It was reproduced from clean commit `e917c79`; all 59 comparable non-timing
 columns matched the development run exactly. This does not replace the still
 pending canonical all-model snapshot.
 
+The [pre-subspace retest](results/pre_subspace/README.md) evaluates this same
+frozen configuration on synthetic seeds 10–29 and eleven real datasets from
+the ADERH paper. It reports paired effect sizes, confidence intervals and
+multiplicity-adjusted sign tests, alongside published and rerun baselines.
+
 ## Historical snapshots
 
 The tracked `full_*`, `smoke_*`, and `rank_based/full_*` artifacts were produced

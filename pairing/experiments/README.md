@@ -79,3 +79,25 @@ The files directly under `results/`, `figures/`, and `results/rank_based/` are
 historical snapshots generated before the final partner-distance and
 radius-alignment correction. They must not be reported as evidence for the
 current implementation. See [`RESULTS_STATUS.md`](RESULTS_STATUS.md).
+
+## Pre-subspace retest
+
+The frozen `random_subspace_10_shuffled` configuration is called **pre-subspace**.
+The retest compares it with `aderh==1.0.0` on fresh synthetic seeds and eleven
+tabular ADBench datasets used by Durani et al. Run from the repository root:
+
+```bash
+python -m pairing.experiments.pre_subspace fetch
+python -m pairing.experiments.pre_subspace real
+python -m pairing.experiments.pre_subspace synthetic
+python -m pairing.experiments.pre_subspace_stats
+```
+
+Only `fetch` needs a network connection on the first run. It downloads the
+manifest's NPZ files from a fixed ADBench revision and verifies SHA-256,
+shape, binary labels and anomaly counts. Later runs reuse the local cache.
+All commands accept the default paths from the repository root. To use
+another output directory pass the same `--output DIR` to both evaluation
+commands and to the statistics command. New runs default to
+`results/current/pre_subspace/`. The reviewed run tables and paired summaries
+are in [results/pre_subspace/](results/pre_subspace/).

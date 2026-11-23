@@ -1,0 +1,36 @@
+{
+  "suite": "real",
+  "python": "3.11.16",
+  "packages": {
+    "aderh": "1.0.0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.1",
+    "pandas": "2.3.3"
+  },
+  "models": {
+    "original": {
+      "n_estimators": 256,
+      "n": 18,
+      "contamination": 0.1
+    },
+    "random_subspace_10_shuffled": {
+      "n_estimators": 256,
+      "n": 18,
+      "contamination": 0.1,
+      "max_features": 10,
+      "shuffle_radii": true
+    }
+  },
+  "model_seeds": [
+    0,
+    1,
+    2,
+    100,
+    1000
+  ],
+  "split": "stratified 70/30; real: three splits with RNG 0; synthetic: one split per data seed",
+  "scaler": "MinMaxScaler fit to training only",
+  "adbench_revision": "3dac8221081e190f157d78e93bfa8867f90d0965",
+  "manifest_sha256": "1f2309c87ba4b5243fc3793b113f34be941298966cfa16ccbb9898e1ed77bd60"
+}
