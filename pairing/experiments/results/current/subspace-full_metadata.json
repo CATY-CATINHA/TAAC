@@ -1,0 +1,102 @@
+{
+  "artifacts": {
+    "figures": [
+      "pairing/experiments/figures/current/subspace-full_roc_auc.png",
+      "pairing/experiments/figures/current/subspace-full_average_precision.png",
+      "pairing/experiments/figures/current/subspace-full_test_uncovered_fraction.png",
+      "pairing/experiments/figures/current/subspace-full_fit_time_seconds.png",
+      "pairing/experiments/figures/current/subspace-full_relative_contrast.png"
+    ],
+    "raw_results": "pairing/experiments/results/current/subspace-full_raw_results.csv",
+    "summary": "pairing/experiments/results/current/subspace-full_summary.csv"
+  },
+  "created_utc": "2026-11-23T17:20:36.508396+00:00",
+  "dataset": {
+    "anomaly_distribution": "N([4, 4], I)",
+    "contamination": 0.05,
+    "informative_dimensions": 2,
+    "irrelevant_distribution": "independent N(0, 1) for both classes",
+    "n_samples": 2000,
+    "normal_distribution": "N([0, 0], I)"
+  },
+  "dimensions": [
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500
+  ],
+  "git_revision": "e917c79b5c9370fd4914024d1064852ea33c012b",
+  "git_worktree_dirty": false,
+  "implementation_note": "corrected_random and all pairing variants use actual partner distances; radius-control variants explicitly isolate radius reassignment and training-only coverage calibration; subspace variants calculate centers, radii and scores in per-estimator feature subsets; original preserves ADERH 1.0.0 behavior",
+  "mode": "subspace-full",
+  "model_count": 2,
+  "models": {
+    "original": {
+      "class": "ADERH",
+      "parameters": {
+        "contamination": 0.1,
+        "n": 18,
+        "n_estimators": 256
+      }
+    },
+    "random_subspace_10_shuffled": {
+      "class": "RandomSubspaceADERH",
+      "parameters": {
+        "contamination": 0.1,
+        "max_features": 10,
+        "n": 18,
+        "n_estimators": 256,
+        "shuffle_radii": true
+      }
+    }
+  },
+  "packages": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.4.6",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.17.1"
+  },
+  "phase2_geometry_diagnostics": {
+    "coverage_max_estimators": 64,
+    "coverage_max_points": 512,
+    "coverage_population": "scaled training observations",
+    "coverage_sampling": "seeded without replacement",
+    "neighbour_k": 5,
+    "neighbour_reference": "first two informative dimensions of the controlled synthetic dataset; diagnostic only, never model input",
+    "subspace_informative_feature_reference": "feature indices 0 and 1 of the controlled synthetic dataset; diagnostic only, never model input"
+  },
+  "platform": "Linux-7.2.15-1-omarchy-x86_64-with-glibc2.44",
+  "preprocessing": "MinMaxScaler fitted on training data only",
+  "python": "3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]",
+  "relative_contrast": {
+    "population": "normal training observations after scaling",
+    "random_pair_count": 4096,
+    "reference_sample_size_max": 512,
+    "self_distances_excluded": true
+  },
+  "score_direction": "higher decision_function values are more anomalous",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "split": {
+    "method": "StratifiedShuffleSplit",
+    "same_indices_across_dimensions_within_seed": true,
+    "test_fraction": 0.3,
+    "train_fraction": 0.7
+  },
+  "uncovered_score_semantics": "score == 1.0 identifies observations not covered by any hypersphere under the pairing implementation's scoring semantics"
+}

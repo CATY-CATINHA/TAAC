@@ -26,6 +26,15 @@ the ten-seed significance tests are exploratory because the first five seeds
 were used for development. The exact tables and limitations are in
 [`../../fase2.md`](../../fase2.md).
 
+The reviewed focused snapshot is tracked as
+[`results/current/subspace-full_raw_results.csv`](results/current/subspace-full_raw_results.csv),
+[`results/current/subspace-full_summary.csv`](results/current/subspace-full_summary.csv)
+and
+[`results/current/subspace-full_metadata.json`](results/current/subspace-full_metadata.json).
+It was reproduced from clean commit `e917c79`; all 59 comparable non-timing
+columns matched the development run exactly. This does not replace the still
+pending canonical all-model snapshot.
+
 ## Historical snapshots
 
 The tracked `full_*`, `smoke_*`, and `rank_based/full_*` artifacts were produced

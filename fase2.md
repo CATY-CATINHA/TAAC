@@ -443,6 +443,12 @@ nas dez seeds através de `subspace-full`. Esta tabela combina desenvolvimento e
 validação para caracterizar a curva completa; por isso, não deve ser descrita
 como uma avaliação totalmente held-out.
 
+O snapshot validado desta execução está disponível nos ficheiros
+[`raw`](pairing/experiments/results/current/subspace-full_raw_results.csv),
+[`summary`](pairing/experiments/results/current/subspace-full_summary.csv) e
+[`metadata`](pairing/experiments/results/current/subspace-full_metadata.json).
+Foi produzido a partir do commit `e917c79`, com o working tree limpo.
+
 | Dimensão | ROC Original | ROC Subspace | Delta ROC | AP Original | AP Subspace | Delta AP |
 |---:|---:|---:|---:|---:|---:|---:|
 | 2D | 0.9993 | 0.9990 | -0.0003 | 0.9833 | 0.9765 | -0.0068 |
@@ -478,6 +484,23 @@ Resulta de deixar de calcular cada distância em todas as features de ruído:
   em 200D e 100% em 500D;
 - a cobertura média amostrada de treino por estimador do candidato mantém-se
   perto de 0.91 em alta dimensão.
+
+Os diagnósticos confirmam que o ensemble não recebe ajuda para encontrar as
+features informativas:
+
+| Dimensão ambiente | Features por estimador | Estimadores com pelo menos uma feature informativa | Estimadores com ambas |
+|---:|---:|---:|---:|
+| 20D | 10 | 76.91% | 24.30% |
+| 50D | 10 | 36.99% | 3.48% |
+| 100D | 10 | 19.65% | 0.98% |
+| 200D | 10 | 9.92% | 0.16% |
+| 500D | 10 | 3.91% | 0.04% |
+
+Apesar de a maioria dos estimadores em alta dimensão não conter uma feature
+informativa, os 256 subespaços dão ao ensemble vistas suficientes para evitar
+o colapso completo. Esta observação também indica o limite da estratégia: à
+medida que a dimensão aumenta, a probabilidade de observar sinal útil continua
+a diminuir.
 
 Este mecanismo é verificável, mas tem uma limitação importante: subespaços
 aleatórios são uma técnica conhecida. O resultado demonstra uma solução
