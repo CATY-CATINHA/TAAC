@@ -9,8 +9,15 @@ class BasePairingADERH(ADERH):
     """
     Base class for experimental ADERH pairing strategies.
 
-    Reuses the original ADERH scoring mechanism and changes
-    only the selection of pair partners.
+    Reuses the original ADERH scoring mechanism. Pairing variants use a
+    one-to-one derangement of the sampled anchors and construct each radius
+    from the actual anchor/partner pair.
+
+    This intentionally differs from two implementation details in ADERH 1.0.0:
+    its radius calculation indexes the full input matrix with permutation
+    positions, and its blocked center ordering is combined with interleaved
+    radii. The ``corrected_random`` experiment isolates those corrections from
+    changes to the partner-selection policy.
     """
 
     def _select_partners(self, X, anchor_idx, rnd):
@@ -148,6 +155,24 @@ class BasePairingADERH(ADERH):
             partner_idx = self._select_partners(
                 X, anchor_idx, rnd
             )
+            partner_idx = np.asarray(partner_idx, dtype=int)
+
+            if partner_idx.shape != anchor_idx.shape:
+                raise RuntimeError(
+                    "Pairing strategy returned an invalid partner shape."
+                )
+
+            if np.any(partner_idx == anchor_idx):
+                raise RuntimeError("An anchor cannot be paired with itself.")
+
+            if not np.array_equal(
+                np.sort(partner_idx),
+                np.sort(anchor_idx),
+            ):
+                raise RuntimeError(
+                    "Partners must be a permutation of the sampled anchors."
+                )
+
             partners = X[partner_idx]
 
             # Calculate squared distances between each anchor and its actual partner.
@@ -168,17 +193,6 @@ class BasePairingADERH(ADERH):
 
             self._sq_radii[i] = np.concatenate(
                 [pair_radii, pair_radii]
-            )
-
-            # Verify that each anchor and its partner have matching radii.
-            assert np.allclose(
-                self._sq_radii[i][:n_anchors],
-                self._sq_radii[i][n_anchors:]
-            )
-
-            assert np.allclose(
-                self._sq_radii[i][:n_anchors],
-                sq_pair_dist / 2
             )
 
         self.n_features_in_ = n_features

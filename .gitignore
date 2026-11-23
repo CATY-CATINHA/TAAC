@@ -1,4 +1,4 @@
-__pycache__/
+**/__pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
@@ -11,4 +11,9 @@ results/*.csv
 results/*.json
 figures/*.png
 figures/*.pdf
+
+# Consolidated pairing runs are generated from the current implementation.
+# Validated snapshots may be force-added deliberately after review.
+pairing/experiments/results/current/
+pairing/experiments/figures/current/
 

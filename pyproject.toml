@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lid-adaptive-aderh"
+version = "0.2.0"
+description = "LID-adaptive pairing experiments for ADERH"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "aderh==1.0.0",
+    "matplotlib>=3.8,<4",
+    "numpy>=1.24,<3",
+    "pandas>=2.0,<3",
+    "scikit-learn>=1.3,<2",
+    "scipy>=1.10,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+pairing-experiment = "pairing.experiments.experiments:main"
+lid-analysis = "lid_analysis.analyze_lid_baseline:main"
+lid-relationships = "lid_analysis.analyze_lid_aderh_relationship:main"
+lid-k-sensitivity = "lid_analysis.analyze_k_sensitivity:main"
+
+[tool.setuptools]
+packages = [
+    "aderh_distance",
+    "lid_analysis",
+    "pairing",
+    "pairing.common",
+    "pairing.experiments",
+    "pairing.hybrid_pairing",
+    "pairing.lid_adaptive_pairing",
+    "pairing.local_pairing",
+    "pairing.random_pairing",
+]
+
+[tool.setuptools.package-dir]
+aderh_distance = "baseline_experiment/src/aderh_distance"
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = [".", "baseline_experiment/src"]
+testpaths = [
+    "baseline_experiment/tests",
+    "lid_analysis/tests",
+    "pairing/tests",
+]

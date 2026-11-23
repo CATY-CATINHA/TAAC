@@ -1,6 +1,6 @@
-"""Experimental pipeline for LocalADERH and HybridADERH.
+"""Controlled comparison of the official and experimental ADERH variants.
 
-- Controlled comparison: for each seed and dimensionality, both models receive the exact same training and test data.
+- Controlled comparison: for each seed and dimensionality, all models receive the exact same training and test data.
 
 - Relative Contrast: calculated once per configuration, as it describes the geometry of the data rather than the performance of a model.
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import subprocess
 import sys
 from datetime import datetime, timezone
 from importlib import metadata
@@ -28,9 +29,10 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import MinMaxScaler
 
 from aderh import ADERH
-from pairing.local_pairing.local_aderh import LocalADERH
 from pairing.hybrid_pairing.hybrid_aderh import HybridADERH
 from pairing.lid_adaptive_pairing.lid_adaptive_aderh import LIDAdaptiveADERH
+from pairing.local_pairing.local_aderh import LocalADERH
+from pairing.random_pairing.corrected_random_aderh import CorrectedRandomADERH
 
 from .data_generation import DEFAULT_DIMENSIONS, make_nested_datasets
 from .metrics import relative_contrast
@@ -43,6 +45,14 @@ FULL_SEEDS = tuple(range(10))
 MODEL_CONFIGS = {
     "original": {
         "class": ADERH,
+        "parameters": {
+            "n_estimators": 256,
+            "n": 18,
+            "contamination": 0.1,
+        },
+    },
+    "corrected_random": {
+        "class": CorrectedRandomADERH,
         "parameters": {
             "n_estimators": 256,
             "n": 18,
@@ -132,6 +142,38 @@ SUMMARY_METRICS = (
     "fit_time_seconds",
     "scoring_time_seconds",
 )
+
+
+def git_revision() -> str | None:
+    """Return the checked-out Git revision when running inside a clone."""
+
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    return completed.stdout.strip() or None
+
+
+def git_worktree_dirty() -> bool | None:
+    """Report whether tracked or untracked files differ from ``HEAD``."""
+
+    try:
+        completed = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    return bool(completed.stdout.strip())
 
 
 def scale_train_test(
@@ -341,8 +383,8 @@ def run_experiment(
     dimensions: Iterable[int],
     seeds: Iterable[int],
     prefix: str,
-    results_dir: Path = Path("pairing/experiments/results"),
-    figures_dir: Path = Path("pairing/experiments/figures"),
+    results_dir: Path = Path("pairing/experiments/results/current"),
+    figures_dir: Path = Path("pairing/experiments/figures/current"),
     reference_sample_size: int = 512,
     random_pair_count: int = 4096,
 ) -> dict[str, Path]:
@@ -483,6 +525,8 @@ def run_experiment(
 
     metadata_payload = {
         "created_utc": datetime.now(timezone.utc).isoformat(),
+        "git_revision": git_revision(),
+        "git_worktree_dirty": git_worktree_dirty(),
         "mode": prefix,
         "dimensions": list(dimensions),
         "seeds": list(seeds),
@@ -530,6 +574,12 @@ def run_experiment(
             }
             for name, config in MODEL_CONFIGS.items()
         },
+        "model_count": len(MODEL_CONFIGS),
+        "implementation_note": (
+            "corrected_random and all pairing variants use actual partner "
+            "distances and center-aligned squared radii; original preserves "
+            "ADERH 1.0.0 behavior"
+        ),
         "score_direction": "higher decision_function values are more anomalous",
         "uncovered_score_semantics": (
             "score == 1.0 identifies observations not covered by any "
@@ -572,12 +622,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--results-dir",
         type=Path,
-        default=Path("pairing/experiments/results"),
+        default=Path("pairing/experiments/results/current"),
     )
     parser.add_argument(
         "--figures-dir",
         type=Path,
-        default=Path("pairing/experiments/figures"),
+        default=Path("pairing/experiments/figures/current"),
     )
     parser.add_argument("--reference-sample-size", type=int, default=512)
     parser.add_argument("--random-pair-count", type=int, default=4096)

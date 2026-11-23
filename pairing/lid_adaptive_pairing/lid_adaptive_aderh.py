@@ -51,6 +51,22 @@ class LIDAdaptiveADERH(BasePairingADERH):
 
         return super().fit(X, y)
 
+    def _continuous_probabilities(self, lid_scores):
+        """Map relative LID ranks to probabilities with mean ``alpha``.
+
+        ``lid_scores`` must be in ``[0, 1]`` and have mean 0.5, as normalized
+        ranks do. The piecewise mapping preserves their ordering, makes
+        ``alpha`` the expected local-pairing proportion, and keeps the endpoint
+        semantics: alpha 0 is fully random and alpha 1 is fully local.
+        """
+
+        lid_scores = np.asarray(lid_scores, dtype=float)
+
+        if self.alpha <= 0.5:
+            return 2 * self.alpha * lid_scores
+
+        return 1 - 2 * (1 - self.alpha) * (1 - lid_scores)
+
     def _select_partners(self, X, anchor_idx, rnd):
         n_anchors = len(anchor_idx)
 
@@ -100,7 +116,7 @@ class LIDAdaptiveADERH(BasePairingADERH):
             if self.direction == "high_random":
                 lid_scores = 1 - lid_scores
 
-            probabilities = self.alpha * lid_scores
+            probabilities = self._continuous_probabilities(lid_scores)
 
             # Each anchor independently decides whether to use local pairing.
             random_values = rnd.random(n_anchors)

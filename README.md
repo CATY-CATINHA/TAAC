@@ -17,6 +17,19 @@ The main idea is to balance:
 
 Instead of using a fixed balance between both strategies, we aim to make the pairing policy adaptive to the local geometric complexity of the data.
 
+## Current Status
+
+The original baseline and the LID analysis are complete. Local, fixed-hybrid
+and LID-adaptive variants are implemented. The pairing comparison is currently
+being consolidated after a correction to partner-distance and radius alignment.
+
+The tracked pairing result files predate that correction and are retained only
+for provenance. They are not results for the current implementation; see
+[`pairing/experiments/RESULTS_STATUS.md`](pairing/experiments/RESULTS_STATUS.md).
+
+The current experiment contains an explicit `corrected_random` control to
+separate implementation corrections from the effect of local pairing.
+
 ---
 
 ## Proposed Method
@@ -50,7 +63,8 @@ where:
 - higher `α(x)` means more local pairing;
 - lower `α(x)` means more random pairing.
 
-The exact function `f` will be determined and evaluated experimentally.
+Two candidate policies are implemented: a fixed-count LID ranking and a
+continuous rank-based probability with expected local proportion `alpha`.
 
 ---
 
@@ -85,11 +99,11 @@ baseline_experiment/
 
 The project is organized into the following stages:
 
-### 1. ADERH Baseline
+### 1. ADERH Baseline — complete
 
 Reproduce and characterize the original high-dimensional failure mode.
 
-### 2. LID Analysis
+### 2. LID Analysis — complete
 
 Estimate **Local Intrinsic Dimensionality** and study its relationship with:
 
@@ -97,15 +111,15 @@ Estimate **Local Intrinsic Dimensionality** and study its relationship with:
 - hypersphere coverage;
 - ADERH predictive performance.
 
-### 3. Local Pairing
+### 3. Local Pairing — implemented
 
 Replace fully random partners with locally selected neighbors as an intermediate baseline.
 
-### 4. Hybrid Pairing
+### 4. Hybrid Pairing — implemented
 
 Combine local and random pairing using a fixed parameter `α`.
 
-### 5. LID-Adaptive Pairing
+### 5. LID-Adaptive Pairing — implemented
 
 Define:
 
@@ -115,16 +129,17 @@ Define:
 
 so that the pairing strategy adapts to local geometric complexity.
 
-### 6. Evaluation and Ablation Studies
+### 6. Evaluation and Ablation Studies — rerun required
 
 Compare:
 
 - Original ADERH;
+- Corrected Random Pairing ADERH;
 - Local Pairing ADERH;
 - Fixed Hybrid Pairing ADERH;
 - LID-Adaptive Pairing ADERH.
 
-### 7. Explainability / Interpretability
+### 7. Explainability / Interpretability — not started
 
 Analyze how:
 
@@ -137,9 +152,28 @@ relate to the final anomaly score.
 
 ---
 
+## Environment
+
+The root `pyproject.toml` defines the complete development environment. Python
+3.11 is the pinned development version (3.10–3.13 are supported):
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m pytest
+```
+
+On Windows, replace `.venv/bin/python` with `.venv\Scripts\python`.
+
+Run the inexpensive corrected comparison before the full experiment:
+
+```bash
+.venv/bin/python -m pairing.experiments.experiments smoke
+```
+
 ## Evaluation
 
-The main evaluation metrics and diagnostics will include:
+The main evaluation metrics and diagnostics include:
 
 - **ROC-AUC**;
 - **Average Precision / AUC-PR**;
@@ -160,12 +194,10 @@ Where appropriate, statistical comparisons will also be performed.
 .
 ├── baseline_experiment/    # Original ADERH dimensionality baseline
 ├── lid_analysis/           # LID estimation and diagnostic analysis
-├── pairing/                # Local, hybrid, and adaptive pairing methods
-├── experiments/            # Main experimental pipelines
-├── xai/                    # Explainability and interpretability analyses
-├── results/                # Experimental results
-├── figures/                # Generated figures and plots
-├── docs/                   # Project documentation
+├── pairing/                # Pairing methods and comparison pipeline
+│   └── experiments/        # Historical artifacts and new corrected runs
+├── experiments/            # Reserved for future cross-component experiments
+├── xai/                    # Planned explainability work
 └── README.md
 ```
 

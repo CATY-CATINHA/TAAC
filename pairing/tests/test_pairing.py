@@ -7,6 +7,7 @@ from aderh import ADERH
 
 from pairing.local_pairing.local_aderh import LocalADERH
 from pairing.hybrid_pairing.hybrid_aderh import HybridADERH
+from pairing.random_pairing.corrected_random_aderh import CorrectedRandomADERH
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def X():
 
 @pytest.mark.parametrize(
     "Model",
-    [LocalADERH, HybridADERH]
+    [CorrectedRandomADERH, LocalADERH, HybridADERH]
 )
 def test_fit_produces_valid_scores(Model, X):
     model = Model(
@@ -36,7 +37,7 @@ def test_fit_produces_valid_scores(Model, X):
 
 @pytest.mark.parametrize(
     "Model",
-    [LocalADERH, HybridADERH]
+    [CorrectedRandomADERH, LocalADERH, HybridADERH]
 )
 def test_reproducibility(Model, X):
     model1 = Model(n_estimators=10, n=18, random_state=42)
@@ -55,7 +56,7 @@ def test_reproducibility(Model, X):
 
 @pytest.mark.parametrize(
     "Model",
-    [LocalADERH, HybridADERH]
+    [CorrectedRandomADERH, LocalADERH, HybridADERH]
 )
 def test_sklearn_clone(Model):
     model = Model(random_state=42)
@@ -95,6 +96,43 @@ def test_local_pairing_uses_unique_sampled_partners(X):
             assert occurrences == 1
 
 
+@pytest.mark.parametrize(
+    "Model,parameters",
+    [
+        (CorrectedRandomADERH, {}),
+        (LocalADERH, {}),
+        (HybridADERH, {"alpha": 0.5}),
+    ],
+)
+def test_radii_match_actual_pairs_and_blocked_center_order(
+    Model,
+    parameters,
+    X,
+):
+    model = Model(
+        n_estimators=4,
+        n=18,
+        random_state=42,
+        **parameters,
+    )
+
+    model.fit(X)
+
+    for estimator in range(model.n_estimators):
+        anchors = model._centers[estimator, :model.n]
+        partners = model._centers[estimator, model.n:]
+        expected = np.sum((anchors - partners) ** 2, axis=1) / 2
+
+        assert np.allclose(
+            model._sq_radii[estimator, :model.n],
+            expected,
+        )
+        assert np.allclose(
+            model._sq_radii[estimator, model.n:],
+            expected,
+        )
+
+
 def test_hybrid_alpha_zero_matches_original_centers(X):
     original = ADERH(
         n_estimators=10,
@@ -116,6 +154,20 @@ def test_hybrid_alpha_zero_matches_original_centers(X):
         original._centers,
         hybrid._centers
     )
+
+
+def test_corrected_random_matches_original_centers(X):
+    original = ADERH(n_estimators=10, n=18, random_state=42)
+    corrected = CorrectedRandomADERH(
+        n_estimators=10,
+        n=18,
+        random_state=42,
+    )
+
+    original.fit(X)
+    corrected.fit(X)
+
+    assert np.array_equal(original._centers, corrected._centers)
 
 
 def test_hybrid_alpha_one_uses_unique_sampled_partners(X):
@@ -152,6 +204,7 @@ def test_hybrid_alpha_one_uses_unique_sampled_partners(X):
             )
             assert occurrences == 1
 
+
 def test_hybrid_alpha_half_selects_half_local_anchors(X, monkeypatch):
     model = HybridADERH(
         n_estimators=10,
@@ -185,6 +238,7 @@ def test_hybrid_alpha_half_selects_half_local_anchors(X, monkeypatch):
     assert len(np.unique(local_positions)) == 9
     assert np.all(local_positions >= 0)
     assert np.all(local_positions < model.n)
+
 
 def test_hybrid_rejects_invalid_alpha(X):
     model = HybridADERH(alpha=1.5)
