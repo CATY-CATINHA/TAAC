@@ -40,6 +40,12 @@ frozen configuration on synthetic seeds 10–29 and eleven real datasets from
 the ADERH paper. It reports paired effect sizes, confidence intervals and
 multiplicity-adjusted sign tests, alongside published and rerun baselines.
 
+The next [checkpoint comparison](results/lid_gate_v1/README.md) adds a
+global LID-based selector, evaluated against both frozen detectors and a
+dimension-only selector. Synthetic seeds 30–49 are paired within that run.
+The real panel repeats the CP0 splits and checks both baselines against its
+archived metrics.
+
 ## Historical snapshots
 
 The tracked `full_*`, `smoke_*`, and `rank_based/full_*` artifacts were produced

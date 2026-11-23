@@ -23,8 +23,8 @@ The original baseline and the LID analysis are complete. Local, fixed-hybrid
 and LID-adaptive variants are implemented. The pairing comparison is currently
 being consolidated after a correction to partner-distance and radius alignment.
 
-The tracked pairing result files predate that correction and are retained only
-for provenance. They are not results for the current implementation; see
+The historical pairing snapshots predate that correction. The results index
+identifies those snapshots and the later checkpoint evaluations.
 [`pairing/experiments/RESULTS_STATUS.md`](pairing/experiments/RESULTS_STATUS.md).
 
 The current experiment contains an explicit `corrected_random` control to
@@ -37,9 +37,10 @@ Phase 2 now also contains a frozen ten-feature random-subspace candidate. It
 is the first current implementation to improve materially on the baseline in
 high ambient dimensions: held-out seeds confirm the strongest gain at 100D,
 and the focused comparison extends the improvement to 200D and 500D. The
-method restores coverage but is not yet LID-adaptive, so the next research
-question is whether LID can guide subspace scale or selection without losing
-that improvement.
+fixed candidate restores coverage in the synthetic experiment. The first
+adaptive checkpoint uses median training LID to select the original model
+or that fixed candidate. The comparison includes eleven real datasets and a
+dimension-only control. [Checkpoint results](pairing/experiments/results/lid_gate_v1/README.md).
 
 The development/validation split, exact results, remaining alternatives and
 pre-registered success criteria are documented in [`fase2.md`](fase2.md).

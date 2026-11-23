@@ -101,3 +101,11 @@ another output directory pass the same `--output DIR` to both evaluation
 commands and to the statistics command. New runs default to
 `results/current/pre_subspace/`. The reviewed run tables and paired summaries
 are in [results/pre_subspace/](results/pre_subspace/).
+
+## First LID selector checkpoint
+
+The [frozen protocol](lid_gate_protocol.md) defines the training-only
+selection rule, its three controls and the commands for both suites.
+The [paired comparison](results/lid_gate_v1/README.md) records the decisions
+and effects relative to each control. New executions default to
+`results/current/lid_gate_v1/`.

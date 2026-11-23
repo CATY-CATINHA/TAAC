@@ -1,0 +1,44 @@
+{
+  "revision": "c7d2fd6129c780176dc37b518a4dd58d6987589c",
+  "suite": "synthetic",
+  "policies": [
+    "original",
+    "random_subspace_10_shuffled",
+    "ambient_gate_10",
+    "lid_gate_v1"
+  ],
+  "lid_k": 20,
+  "threshold": 10,
+  "model_seeds": [
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "cp0_revision": "a15791d",
+  "python": "3.11.16",
+  "packages": {
+    "aderh": "1.0.0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.1",
+    "pandas": "2.3.3"
+  },
+  "manifest_sha256": "1f2309c87ba4b5243fc3793b113f34be941298966cfa16ccbb9898e1ed77bd60"
+}

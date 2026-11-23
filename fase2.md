@@ -563,3 +563,18 @@ deltas por dataset foi +0,0096 em AP e −0,0109 em ROC-AUC. Ambos os IC de
 generalizou apenas a alguns datasets do painel. Estes resultados passam
 a servir de referência para avaliar o valor acrescentado da LID.
 [Protocolo, resultados e verificação da baseline publicada](pairing/experiments/results/pre_subspace/README.md).
+
+## Primeira alteração após o pre-subspace · seleção global por LID
+
+| Checkpoint | O que fica disponível para comparação |
+|---|---|
+| CP0 · `a15791d` | Original, pre-subspace fixo e avaliação emparelhada de referência |
+| CP1 · `c7d2fd6` | Regra congelada que ativa o pre-subspace acima de dez features se a mediana de LID no treino exceder 10, e controlo por dimensão ambiente |
+| CP2 · resultados CP1 | Decisões, métricas e contrastes nos onze datasets reais e nas seeds sintéticas 30–49 |
+
+No sintético, a LID e a contagem de features escolheram o mesmo modelo
+nos 160 casos. Nos dados reais, o CP1 obteve AP 0,5364, face a 0,5503 do
+pre-subspace e 0,5407 do original. O intervalo de confiança do delta face
+ao pre-subspace abrange zero. Mantemos o pre-subspace como referência e
+guardamos o CP1 como primeira experiência de seleção adaptativa.
+[Relatório e ficheiros dos checkpoints](pairing/experiments/results/lid_gate_v1/README.md).
