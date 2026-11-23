@@ -44,7 +44,7 @@ packages = [
 aderh_distance = "baseline_experiment/src/aderh_distance"
 
 [tool.setuptools.package-data]
-"pairing.experiments" = ["data/adbench_manifest.csv"]
+"pairing.experiments" = ["data/adbench_manifest.csv", "results/pre_subspace/real_runs.csv"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"

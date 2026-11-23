@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 
-def estimate_lid(X, k=20, reference=None, eps=1e-12):
+def estimate_lid(X, k=20, reference=None, eps=1e-12, *, allow_degenerate=False):
     """
     Estimate Local Intrinsic Dimensionality (LID)
     for each observation using the MLE estimator.
@@ -22,6 +22,9 @@ def estimate_lid(X, k=20, reference=None, eps=1e-12):
 
     eps : float, default=1e-12
         Small value used for numerical stability.
+
+    allow_degenerate : bool, default=False
+        Return NaN for individual undefined estimates instead of raising.
 
     Returns
     -------
@@ -121,11 +124,12 @@ def estimate_lid(X, k=20, reference=None, eps=1e-12):
 
     denominator = -np.mean(log_ratios, axis=1)
 
-    if np.any(denominator <= eps):
+    valid = denominator > eps
+    if not allow_degenerate and not np.all(valid):
         raise ValueError(
             "Degenerate neighbourhood detected while estimating LID."
         )
 
-    lid_values = 1.0 / denominator
+    lid_values = np.divide(1.0, denominator, out=np.full_like(denominator, np.nan), where=valid)
 
     return lid_values

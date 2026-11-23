@@ -54,6 +54,15 @@ def verified_data(row, cache, download=False):
     return X, y
 
 
+def metric_row(dataset, dimension, n_train, y_test, split, seed, name, scores):
+    return dict(dataset=dataset, dimensionality=dimension, split=split,
+                seed=seed, model=name, n_train=n_train, n_test=len(y_test),
+                test_anomalies=int(y_test.sum()),
+                average_precision=average_precision_score(y_test, scores),
+                roc_auc=roc_auc_score(y_test, scores),
+                uncovered_fraction=np.mean(scores == 1))
+
+
 def paired_rows(dataset, X, y, train, test, split, seeds):
     X_train, X_test, _ = scale_train_test(X[train], X[test])
     for seed in seeds:
@@ -62,28 +71,23 @@ def paired_rows(dataset, X, y, train, test, split, seeds):
             detector = config["class"](**config["parameters"], random_state=seed)
             detector.fit(X_train)
             scores = detector.decision_function(X_test)
-            yield dict(dataset=dataset, dimensionality=X.shape[1], split=split,
-                       seed=seed, model=name, n_train=len(train), n_test=len(test),
-                       test_anomalies=int(y[test].sum()),
-                       average_precision=average_precision_score(y[test], scores),
-                       roc_auc=roc_auc_score(y[test], scores),
-                       uncovered_fraction=np.mean(scores == 1))
+            yield metric_row(dataset, X.shape[1], len(train), y[test], split, seed, name, scores)
 
 
-def run_suite(suite, cache):
+def run_suite(suite, cache, *, evaluate=paired_rows, synthetic_seeds=NEW_SEEDS):
     if suite == "synthetic":
-        for seed in NEW_SEEDS:
+        for seed in synthetic_seeds:
             print(f"Synthetic seed {seed}", flush=True)
             for d, data in make_nested_datasets(DEFAULT_DIMENSIONS, random_state=seed).items():
                 train, test = split_indices(data.y, random_state=seed)
-                yield from paired_rows(f"{d}D", data.X, data.y, train, test, 0, [seed])
+                yield from evaluate(f"{d}D", data.X, data.y, train, test, 0, [seed])
     else:
         for row in pd.read_csv(MANIFEST).itertuples():
             X, y = verified_data(row, cache)
             print(row.dataset, flush=True)
             splitter = StratifiedShuffleSplit(n_splits=3, test_size=0.30, random_state=0)
             for split, (train, test) in enumerate(splitter.split(X, y)):
-                yield from paired_rows(row.dataset, X, y, train, test, split, REAL_SEEDS)
+                yield from evaluate(row.dataset, X, y, train, test, split, REAL_SEEDS)
 
 
 def wdbc_reference(cache):

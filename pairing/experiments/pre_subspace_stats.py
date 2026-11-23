@@ -24,6 +24,11 @@ def holm(p_values):
 
 def effect(pairs):
     delta = (pairs[CANDIDATE] - pairs["original"]).to_numpy()
+    return dict(original=pairs["original"].mean(), pre_subspace=pairs[CANDIDATE].mean(),
+                **paired_difference(delta))
+
+
+def paired_difference(delta):
     rng = np.random.default_rng(BOOTSTRAP_SEED)
     sampled = rng.choice(delta, size=(BOOTSTRAP_REPEATS, len(delta)), replace=True)
     low, high = np.quantile(sampled.mean(axis=1), [0.025, 0.975])
@@ -32,15 +37,14 @@ def effect(pairs):
     wins = int((signed > 0).sum())
     losses = int((signed < 0).sum())
     p = binomtest(wins, wins + losses).pvalue if wins + losses else 1.0
-    return dict(n_units=len(delta), original=pairs["original"].mean(),
-                pre_subspace=pairs[CANDIDATE].mean(), delta_mean=delta.mean(),
+    return dict(n_units=len(delta), delta_mean=delta.mean(),
                 delta_median=np.median(delta), ci95_low=low, ci95_high=high,
                 wins=wins, ties=len(delta) - wins - losses, losses=losses, sign_p=p)
 
 
-def validate_grid(frame, datasets, splits, seeds):
+def validate_grid(frame, datasets, splits, seeds, *, models=MODELS):
     keys = ["dataset", "split", "seed", "model"]
-    expected = pd.MultiIndex.from_product([datasets, splits, seeds, MODELS], names=keys)
+    expected = pd.MultiIndex.from_product([datasets, splits, seeds, models], names=keys)
     actual = pd.MultiIndex.from_frame(frame[keys])
     if not actual.is_unique or not expected.sort_values().equals(actual.sort_values()):
         raise ValueError("Incomplete, extra or duplicate paired observations")
